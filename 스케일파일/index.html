@@ -146,7 +146,8 @@ h2{margin:0;font:700 13px var(--body);letter-spacing:.08em;color:var(--muted)}
 .chips.v3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .chips.v3 .chip{padding:9px 10px}
 .vgroup{display:grid;gap:6px}
-.vgroup-label{font-size:12px;font-weight:700;color:var(--muted)}
+.vgroup-label{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--ink)}
+.vgroup-label::before{content:"";width:4px;height:15px;border-radius:2px;background:var(--accent)}
 details.manual{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:10px 12px}
 details.manual summary{cursor:pointer;font-size:13px;color:var(--muted);font-weight:500}
 details.manual[open] summary{margin-bottom:10px}
@@ -447,7 +448,8 @@ es:{ comboTitle:'Combinar ejercicios (hasta 3)', comboHint:'Toca ejercicios para
   comboNamePh:'Nombre de la rutina (p. ej. Mi mañana)', myRoutineN:n=>`Mi rutina ${n}`, patTitle:'Crear un patrón de notas', nextUp:(n,s)=>`Siguiente en ${s} s: ${n}`, myTag:'Mi rutina', comboDraft:'Rutina en curso' },
 };
 const SPEED_T = { ko:{ speedLbl:'빠르기 (드래그해서 조절)' }, en:{ speedLbl:'Speed (drag to adjust)' }, ja:{ speedLbl:'速さ(ドラッグで調整)' }, zh:{ speedLbl:'速度(拖动调整)' }, es:{ speedLbl:'Velocidad (arrastra para ajustar)' } };
-Object.keys(EXTRA).forEach(l => Object.assign(T[l], EXTRA[l], COMBO[l], SPEED_T[l]));
+const VOICE_T = { ko:{ male:'남자', female:'여자' }, en:{ male:'Men', female:'Women' }, ja:{ male:'男性', female:'女性' }, zh:{ male:'男生', female:'女生' }, es:{ male:'Hombres', female:'Mujeres' } };
+Object.keys(EXTRA).forEach(l => Object.assign(T[l], EXTRA[l], COMBO[l], SPEED_T[l], VOICE_T[l]));
 /* note naming per language */
 const SCI = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const LAMP = {
