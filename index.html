@@ -61,8 +61,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .lamp small{font:500 10px var(--display);color:var(--stage-muted);letter-spacing:.03em}
 .lamp.on{background:var(--stage-lamp);border-color:var(--stage-lamp);color:#2a1a05;transform:translateY(-3px)}
 .lamp.on small{color:#5a4014}
-.track{display:grid;gap:4px;cursor:default}
+.track{position:relative;display:grid;gap:4px;cursor:default}
 .seek{width:100%;accent-color:var(--stage-lamp);height:28px;margin:0;cursor:pointer}
+/* scrub bubble: follows the thumb while dragging, like a video player */
+.scrub-tip{position:absolute;bottom:calc(100% - 2px);left:0;transform:translateX(-50%);background:var(--stage-lamp);color:#2a1a05;font:700 13px var(--display);font-variant-numeric:tabular-nums;padding:4px 9px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:2}
+.scrub-tip small{font:500 11px var(--body);margin-left:6px;color:#5a4014}
+.scrub-tip.show{opacity:1}
+.track.scrubbing #trackTime{color:var(--stage-lamp)}
+@media (prefers-reduced-motion:reduce){.scrub-tip{transition:none}}
 .track-meta{display:flex;justify-content:space-between;gap:8px;font:500 12px var(--display);color:var(--stage-muted);font-variant-numeric:tabular-nums}
 
 /* settings */
@@ -187,7 +193,8 @@ details.manual .range .step{background:var(--bg)}
     </div>
     <div class="cue" id="cue"></div>
     <div class="track" id="track">
-      <input class="seek" id="seek" type="range" min="0" max="0" step="1" value="0">
+      <div class="scrub-tip" id="scrubTip" aria-hidden="true"></div>
+      <input class="seek" id="seek" type="range" min="0" max="0" step="0.1" value="0">
       <div class="track-meta"><span id="trackPos"></span><span id="trackTime">0:00</span></div>
     </div>
   </div>
@@ -718,7 +725,8 @@ function showAt(p, live){
     }
   }
   document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('on', i === on));
-  const seek = $('seek'); if (document.activeElement !== seek || live) seek.value = k;
+  const seek = $('seek'); if (!scrubbing) seek.value = p;
+  seek.setAttribute('aria-valuetext', fmt(p) + ' · ' + keyBig(key.root));
   $('trackPos').textContent = t().keys(k + 1, P.keys.length);
   $('trackTime').textContent = fmt(p) + ' / ' + fmt(P.total);
   if (live) {
@@ -731,14 +739,14 @@ function loop(){
   if (state !== 'playing') return;
   const p = ctx.currentTime - t0;
   if (p >= P.total) { silence(); state = 'done'; pos = 0; paint(); return; }
-  showAt(p, true);
+  showAt(scrubbing ? scrubVal : p, !scrubbing); // while dragging, preview the dragged spot; audio keeps playing
   requestAnimationFrame(loop);
 }
 function paint(){
   const st = $('stage');
   st.classList.toggle('playing', state === 'playing');
   st.classList.toggle('paused', state === 'paused');
-  $('seek').max = P.empty ? 0 : P.keys.length - 1;
+  $('seek').max = P.empty ? 0 : P.total;
   $('liveText').textContent = t().st[state];
   $('playBtn').textContent = state === 'playing' ? t().pause : state === 'paused' ? t().resume : state === 'done' ? t().again : t().start;
   $('playBtn').disabled = !!P.empty;
@@ -836,8 +844,37 @@ function change(fn){ fn(); persist(); toIdle(); renderControls(); }
 $('lang').onchange = e => { L = S.lang = e.target.value; persist(); lampSig = ''; renderStatic(); renderControls(); renderMic(); paint(); };
 $('stage').addEventListener('click', e => { if (e.target.closest('#track')) return; state === 'playing' ? pause() : play(); });
 $('stage').addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.target.closest('#track')) { e.preventDefault(); state === 'playing' ? pause() : play(); } });
-$('seek').addEventListener('input', e => { if (state !== 'playing') { pos = P.keys[+e.target.value].t; state = 'paused'; paint(); } });
-$('seek').addEventListener('change', e => seekKey(+e.target.value));
+/* scrubbing: drag shows time + key in a bubble; release jumps to the start of that key (its chord) */
+let scrubbing = false, scrubVal = 0;
+function scrubTipAt(v){
+  const seek = $('seek'), tip = $('scrubTip'), max = +seek.max || 1;
+  tip.innerHTML = `${fmt(v)}<small>${keyBig(P.keys[keyAt(v)].root)}</small>`;
+  const w = seek.clientWidth, thumb = 16, x = (v / max) * (w - thumb) + thumb / 2, half = tip.offsetWidth / 2;
+  tip.style.left = Math.min(Math.max(x, half), w - half) + 'px';
+  tip.classList.add('show');
+}
+function scrubTo(v){
+  scrubbing = true; scrubVal = v;
+  $('track').classList.add('scrubbing'); scrubTipAt(v);
+  if (state === 'playing') showAt(v, false);
+  else { pos = v; state = 'paused'; paint(); }
+}
+function endScrub(){
+  if (!scrubbing) return;
+  scrubbing = false;
+  $('track').classList.remove('scrubbing'); $('scrubTip').classList.remove('show');
+  seekKey(keyAt(scrubVal));
+}
+$('seek').addEventListener('input', e => { if (!P.empty) scrubTo(+e.target.value); });
+$('seek').addEventListener('change', endScrub);
+['pointerup', 'pointercancel', 'blur'].forEach(ev => $('seek').addEventListener(ev, endScrub));
+$('seek').addEventListener('keydown', e => { // arrow keys still step one key at a time
+  if (P.empty) return;
+  const cur = keyAt(state === 'playing' ? ctx.currentTime - t0 : pos), last = P.keys.length - 1;
+  const to = { ArrowLeft: cur - 1, ArrowDown: cur - 1, PageDown: cur - 1, ArrowRight: cur + 1, ArrowUp: cur + 1, PageUp: cur + 1, Home: 0, End: last }[e.key];
+  if (to === undefined) return;
+  e.preventDefault(); seekKey(Math.min(Math.max(to, 0), last));
+});
 $('playBtn').onclick = () => state === 'playing' ? pause() : play();
 $('resetBtn').onclick = () => toIdle();
 ['voicesM','voicesF'].forEach(id => $(id).onclick = e => { const b = e.target.closest('.chip'); if (!b) return;
