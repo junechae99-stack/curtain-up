@@ -516,7 +516,7 @@ const exTip = e => e.id.startsWith('my-') ? '' : t().ex[e.id][1];
 const BASE_NOTE = 0.42; // seconds per note at 1x (the old "medium")
 const clampSpeed = x => Math.min(2, Math.max(0.5, Math.round(x * 20) / 20));
 const fmtSpeed = x => x.toFixed(2).replace(/0$/, '') + '×';
-const DEFAULT = { voice:'tenor', mode:'single', ex:'arp', routine:'light', cat:'all', low:48, top:72, speed:1, dir:'both', custom:[], myRoutines:[], lang:null, noMelody:false };
+const DEFAULT = { voice:'tenor', mode:'single', ex:'five', routine:'light', cat:'all', low:48, top:72, speed:1, dir:'both', custom:[], myRoutines:[], lang:null, noMelody:false };
 let S = { ...DEFAULT }, saved = {};
 try { saved = JSON.parse(localStorage.getItem('curtainup') || '{}') || {}; S = { ...DEFAULT, ...saved }; } catch(e) {}
 if (saved.tempo && !saved.speed) S.speed = BASE_NOTE / saved.tempo; // migrate old slow/medium/fast buttons
