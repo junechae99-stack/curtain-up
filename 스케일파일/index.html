@@ -156,7 +156,7 @@ details.manual .range .step{background:var(--bg)}
 .meter-bar{position:relative;height:10px;border-radius:999px;background:var(--stage-dim)}
 .meter-bar::before{content:"";position:absolute;left:35%;right:35%;top:0;bottom:0;border-radius:999px;background:color-mix(in srgb,var(--good) 40%,transparent)}
 .meter-bar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--stage-muted);transform:translateX(-50%)}
-.needle{position:absolute;top:-5px;width:6px;height:20px;border-radius:3px;background:var(--stage-muted);left:50%;transform:translateX(-50%);transition:left .08s linear;z-index:1}
+.needle{position:absolute;top:-5px;width:6px;height:20px;border-radius:3px;background:var(--stage-muted);left:50%;transform:translateX(-50%);transition:left .15s ease-out,background-color .2s;z-index:1}
 .needle.good{background:var(--good)} .needle.warn{background:var(--warn)} .needle.off{background:var(--off)}
 .meter-text{display:flex;justify-content:space-between;gap:8px;font:500 12px var(--body);color:var(--stage-muted);font-variant-numeric:tabular-nums}
 .verdict{font-weight:700;color:var(--stage-ink)}
@@ -668,31 +668,48 @@ function targetNow(){
   const p = ctx.currentTime - t0;
   let cur = null; for (const e of P.ev) { if (e.t <= p) cur = e; else break; }
   if (!cur || cur.cue || p > cur.t + cur.dur + 0.05) return null;
-  if (cur.glide) { const x = Math.min(1, (p - cur.t) / cur.dur) * (cur.glide.length - 1), j = Math.min(cur.glide.length - 2, Math.floor(x)); return { m: cur.glide[j] + (cur.glide[j + 1] - cur.glide[j]) * (x - j), k: cur.k }; }
-  return { m: cur.notes[0], k: cur.k };
+  if (cur.glide) { const x = Math.min(1, (p - cur.t) / cur.dur) * (cur.glide.length - 1), j = Math.min(cur.glide.length - 2, Math.floor(x)); return { m: cur.glide[j] + (cur.glide[j + 1] - cur.glide[j]) * (x - j), k: cur.k, e: cur }; }
+  return { m: cur.notes[0], k: cur.k, e: cur };
 }
 const noteLabel = m => L === 'ko' ? korOct(m) : sci(m);
+/* smoothing: average the error over ~0.3 s (rides out vibrato), hold through short gaps, debounce the verdict */
+let errBuf = [], errEv = null, smC = null, gap = 0, shownCls = null, candCls = null, candN = 0;
 function micTick(){
   analyser.getFloatTimeDomainData(micBuf);
   const f = detectPitch(micBuf, ctx.sampleRate);
-  recent.push(f ? 69 + 12 * Math.log2(f / 440) : null); if (recent.length > 3) recent.shift();
+  const raw = f ? 69 + 12 * Math.log2(f / 440) : null;
+  recent.push(raw); if (recent.length > 3) recent.shift();
   const voiced = recent.filter(x => x !== null);
-  const m = voiced.length >= 2 ? voiced.sort((x, y) => x - y)[Math.floor(voiced.length / 2)] : null;
+  const m = voiced.length >= 2 ? [...voiced].sort((x, y) => x - y)[Math.floor(voiced.length / 2)] : null;
   const tg = targetNow(), needle = $('needle'), vd = $('verdict');
+  if (!tg || tg.e !== errEv) { errBuf = []; errEv = tg ? tg.e : null; if (!tg) smC = null; }
+  if (raw !== null && tg) {
+    let d = raw - tg.m; d -= 12 * Math.round(d / 12);
+    errBuf.push(d * 100); if (errBuf.length > 6) errBuf.shift();
+  }
+  gap = raw === null ? gap + 1 : 0;
+  if (gap > 6) { errBuf = []; smC = null; }           // silent for >0.3 s: let go
   let cls = '', text = '';
-  if (m === null) { text = tg ? t().noVoice : t().waiting; needle.style.left = '50%'; }
-  if (m !== null && tg) {
-    let diff = m - tg.m; diff -= 12 * Math.round(diff / 12);
-    const cents = Math.round(diff * 100), a = Math.abs(cents);
-    cls = a <= 20 ? 'good' : a <= 50 ? 'warn' : 'off';
-    text = a <= 20 ? t().inTune : cents > 0 ? (a <= 50 ? t().sharpS : t().sharp) : (a <= 50 ? t().flatS : t().flat);
-    needle.style.left = (50 + Math.max(-50, Math.min(50, cents))) + '%';
-    const s = stats[tg.k] || (stats[tg.k] = { hit:0, n:0 }); s.n++; if (a <= 35) s.hit++;
-    $('myNote').textContent = t().myNote(noteLabel(Math.round(m)), cents);
-  } else if (m !== null) {
-    text = t().waiting; needle.style.left = '50%';
-    $('myNote').textContent = t().myNote(noteLabel(Math.round(m)), null);
-  } else $('myNote').textContent = '';
+  if (tg && errBuf.length >= 2 && gap <= 6) {
+    const srt = [...errBuf].sort((x, y) => x - y), med = srt[srt.length >> 1];
+    const keep = errBuf.filter(c => Math.abs(c - med) <= 60), avg = keep.reduce((x, y) => x + y, 0) / keep.length;
+    smC = smC === null || Math.abs(avg - smC) > 80 ? avg : smC + 0.45 * (avg - smC);
+    const cents = Math.round(smC), a = Math.abs(cents);
+    const now = a <= 20 ? 'good' : a <= 50 ? (cents > 0 ? 'warnH' : 'warnL') : (cents > 0 ? 'offH' : 'offL');
+    if (now === candCls) candN++; else { candCls = now; candN = 1; }
+    if (shownCls === null || candN >= 3) shownCls = candCls;
+    cls = shownCls === 'good' ? 'good' : shownCls.slice(0, -1);
+    text = { good:t().inTune, warnH:t().sharpS, warnL:t().flatS, offH:t().sharp, offL:t().flat }[shownCls];
+    needle.style.left = (50 + Math.max(-50, Math.min(50, smC))) + '%';
+    if (raw !== null) { const s = stats[tg.k] || (stats[tg.k] = { hit:0, n:0 }); s.n++; if (a <= 35) s.hit++; }
+    $('myNote').textContent = t().myNote(noteLabel(Math.round(m ?? tg.m + smC / 100)), cents);
+  } else if (tg && smC !== null && gap <= 6) {
+    return; // between notes or a brief gap: keep the needle where it is
+  } else {
+    shownCls = null; candCls = null;
+    text = tg ? t().noVoice : t().waiting; needle.style.left = '50%';
+    $('myNote').textContent = m !== null ? t().myNote(noteLabel(Math.round(m)), null) : '';
+  }
   needle.className = 'needle ' + cls; vd.className = 'verdict ' + cls; vd.textContent = text;
   const tot = Object.values(stats).reduce((acc, s) => (acc.h += s.hit, acc.n += s.n, acc), { h:0, n:0 });
   $('score').textContent = tot.n > 10 ? t().scoreLive(Math.round(tot.h / tot.n * 100)) : '';
