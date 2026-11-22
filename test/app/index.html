@@ -593,9 +593,9 @@ const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(Math.max(0, s) % 6
 /* ---------- audio ---------- */
 let ctx = null, wave = null, master = null, timer = null, t0 = 0, nextIdx = 0;
 let P = buildPlan(), state = 'idle', pos = 0;
-/* iPhone plays through its call sound path while the mic is on, at a different loudness: the piano gets its own level then */
-const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const micVol = () => S.micVol >= 0.1 && S.micVol <= 1 ? +S.micVol : (IOS ? 0.5 : 1);
+/* iPhone uses its call sound path while the mic is on and can stay there afterwards (quiet): say which one we want. The piano also gets its own level while the mic is on. */
+function soundMode(type){ try { if (navigator.audioSession && navigator.audioSession.type !== type) navigator.audioSession.type = type; } catch (e) {} }
+const micVol = () => S.micVol >= 0.1 && S.micVol <= 1 ? +S.micVol : 1;
 let quiet = false; // silent while the phone switches its sound path
 const level = () => quiet ? 0.0001 : 0.22 * (mic ? micVol() : 1);
 function applyLevel(){ if (master) master.gain.setTargetAtTime(level(), ctx.currentTime, 0.05); }
@@ -606,6 +606,7 @@ function ensureAudio(){
     try { old.close().catch(() => {}); } catch (e) {}
   }
   stale = false;
+  soundMode(mic ? 'play-and-record' : 'playback');
   if (ctx) return;
   const c = ctx = new (window.AudioContext || window.webkitAudioContext)();
   c.onstatechange = () => { if (c === ctx && c.state !== 'running') pause(); }; // e.g. a phone call takes over the sound
@@ -833,11 +834,12 @@ function listenTo(stream){
 async function micOn(){
   if (!navigator.mediaDevices?.getUserMedia) { micMessage('micNoSupport', true); return; }
   ensureAudio(); ctx.resume();
+  soundMode('play-and-record'); // must be set before the mic opens
   try {
     mic = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:false, autoGainControl:true } });
   } catch (e) {
     const blocked = document.permissionsPolicy?.allowsFeature?.('microphone') === false || document.featurePolicy?.allowsFeature?.('microphone') === false || e.name === 'SecurityError';
-    micMessage(blocked || e.name !== 'NotAllowedError' ? 'micBlocked' : 'micDenied', true); mic = null; return;
+    micMessage(blocked || e.name !== 'NotAllowedError' ? 'micBlocked' : 'micDenied', true); mic = null; soundMode('playback'); return;
   }
   ensureAudio(); ctx.resume(); // the permission prompt may have interrupted the sound
   listenTo(mic); applyLevel();
@@ -847,7 +849,7 @@ async function micOn(){
 function micOff(){
   clearInterval(micTimer); micTimer = null;
   if (mic) mic.getTracks().forEach(tr => tr.stop());
-  mic = null; applyLevel(); $('meter').hidden = true; micMessage('micHint'); renderMic();
+  mic = null; soundMode('playback'); applyLevel(); $('meter').hidden = true; micMessage('micHint'); renderMic();
 }
 function renderMic(){
   $('micBtn').textContent = mic ? t().micOff : t().micOn;

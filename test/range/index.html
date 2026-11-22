@@ -122,6 +122,7 @@ function say(step, m, cue){ $('step').textContent = step; $('big').textContent =
 function buttons(list){ $('btns').innerHTML = ''; list.forEach(([txt, fn, cls]) => { const b = document.createElement('button'); b.textContent = txt; b.className = cls || ''; b.onclick = fn; $('btns').append(b); }); }
 function heard(txt, off){ $('heard').textContent = txt; $('heard').className = 'heard' + (off ? ' off' : ''); }
 function fill(p){ $('fill').style.width = Math.round(p * 100) + '%'; }
+function soundMode(type){ try { if (navigator.audioSession && navigator.audioSession.type !== type) navigator.audioSession.type = type; } catch (e) {} }
 async function openMic(){
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { heard('이 브라우저에서는 마이크를 쓸 수 없어요. 크롬이나 사파리에서 열어 주세요.', true); return false; }
   if (ctx) { try { ctx.close().catch(() => {}); } catch (e) {} ctx = null; osc = null; } // after the phone slept the old sound engine can stay frozen
@@ -132,15 +133,16 @@ async function openMic(){
     master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
   }
   await ctx.resume();
-  // no echo cancelling: the piano is always silent while we listen
-  try { mic = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:true } }); }
+  soundMode('play-and-record');
+  // same mic setting as the app: on iPhone, echo cancelling off can send the piano to the quiet earpiece
+  try { mic = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:false, autoGainControl:true } }); }
   catch (e) { heard(e.name === 'NotAllowedError' ? '마이크를 허용해 주세요. 주소창 왼쪽 아이콘에서 바꿀 수 있어요.' : '마이크를 열 수 없어요. 연결되어 있는지 확인해 주세요.', true); return false; }
   analyser = ctx.createAnalyser(); analyser.fftSize = 2048; buf = new Float32Array(2048);
   ctx.createMediaStreamSource(mic).connect(analyser);
   timer = setInterval(tick, TICK * 1000);
   return true;
 }
-function closeMic(){ clearInterval(timer); timer = null; if (mic) mic.getTracks().forEach(t => t.stop()); mic = null; }
+function closeMic(){ clearInterval(timer); timer = null; if (mic) mic.getTracks().forEach(t => t.stop()); mic = null; soundMode('playback'); }
 function intro(){
   phase = 'intro'; say('반음씩 확인하느라 몇 분 걸려요', null, '목에 힘을 빼고 시작해요'); fill(0);
   buttons([['시작하기', async () => { if (await openMic()) askComfy(); }, 'primary wide']]);
