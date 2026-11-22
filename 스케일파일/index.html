@@ -450,7 +450,7 @@ es:{ comboTitle:'Combinar ejercicios (hasta 3)', comboHint:'Toca ejercicios para
 const SPEED_T = { ko:{ speedLbl:'빠르기 (드래그해서 조절)' }, en:{ speedLbl:'Speed (drag to adjust)' }, ja:{ speedLbl:'速さ(ドラッグで調整)' }, zh:{ speedLbl:'速度(拖动调整)' }, es:{ speedLbl:'Velocidad (arrastra para ajustar)' } };
 const VOICE_T = { ko:{ male:'남자', female:'여자' }, en:{ male:'Men', female:'Women' }, ja:{ male:'男性', female:'女性' }, zh:{ male:'男生', female:'女生' }, es:{ male:'Hombres', female:'Mujeres' } };
 const AWAY_T = { ko:{ audioStuck:'소리가 멈췄어요. 재생을 한 번 더 눌러 주세요', micAway:'화면을 벗어나서 마이크를 껐어요. 다시 켜려면 위 버튼을 눌러 주세요.' }, en:{ audioStuck:'The sound stopped. Tap play once more', micAway:'You left this screen, so the mic was turned off. Tap the button above to turn it back on.' }, ja:{ audioStuck:'音が止まりました。もう一度再生を押してください', micAway:'画面を離れたのでマイクをオフにしました。上のボタンでもう一度オンにできます。' }, zh:{ audioStuck:'声音停止了，请再按一次播放', micAway:'你离开了此画面,麦克风已关闭。点击上方按钮可重新开启。' }, es:{ audioStuck:'El sonido se detuvo. Toca reproducir otra vez', micAway:'Saliste de la pantalla y se apagó el micrófono. Toca el botón de arriba para activarlo.' } };
-const SCORE_T = { ko:{ sungOf:(a,b)=>`(부른 키 ${a}/${b})` }, en:{ sungOf:(a,b)=>`(sang ${a} of ${b} keys)` }, ja:{ sungOf:(a,b)=>`(歌ったキー ${a}/${b})` }, zh:{ sungOf:(a,b)=>`(唱了 ${a}/${b} 个调)` }, es:{ sungOf:(a,b)=>`(cantaste ${a} de ${b} tonos)` } };
+const SCORE_T = { ko:{ octLow:'한 옥타브 낮아요', octHigh:'한 옥타브 높아요', octKeys:n=>`옥타브가 다르게 부른 키가 ${n}개 있어요.`, sungOf:(a,b)=>`(부른 키 ${a}/${b})` }, en:{ octLow:'An octave low', octHigh:'An octave high', octKeys:n=>`${n} keys were sung in a different octave.`, sungOf:(a,b)=>`(sang ${a} of ${b} keys)` }, ja:{ octLow:'1オクターブ低いです', octHigh:'1オクターブ高いです', octKeys:n=>`オクターブ違いで歌ったキーが${n}個あります。`, sungOf:(a,b)=>`(歌ったキー ${a}/${b})` }, zh:{ octLow:'低了一个八度', octHigh:'高了一个八度', octKeys:n=>`有 ${n} 个调唱成了别的八度。`, sungOf:(a,b)=>`(唱了 ${a}/${b} 个调)` }, es:{ octLow:'Una octava abajo', octHigh:'Una octava arriba', octKeys:n=>`Cantaste ${n} tonos en otra octava.`, sungOf:(a,b)=>`(cantaste ${a} de ${b} tonos)` } };
 Object.keys(EXTRA).forEach(l => Object.assign(T[l], EXTRA[l], COMBO[l], SPEED_T[l], VOICE_T[l], SCORE_T[l], AWAY_T[l]));
 /* note naming per language */
 const SCI = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -709,8 +709,9 @@ const noteLabel = m => L === 'ko' ? korOct(m) : sci(m);
    - the voice always arrives late (speaker, reaction, mic), so find the delay that fits the whole key, up to MAX_LAG
    - skip the start of each note (sliding in from the last note), then take the middle pitch so vibrato doesn't count against you
    - within FULL cents is a full hit, a whole semitone off is zero
+   - a note sung mostly in another octave is not a hit; a few stray octave-off moments (creaky sounds can read an octave low) are forgiven
    A skipped note counts as missed. A key sung with no sound at all is treated as a rest. */
-const FULL = 45, ZERO = 100, MAX_LAG = 0.4;
+const FULL = 45, ZERO = 100, MAX_LAG = 0.4, OCT_SHARE = 0.7;
 let hist = [], keyDone = -1, lagEst = 0.15;
 const foldC = d => (d - 12 * Math.round(d / 12)) * 100;
 const medOf = a => { const x = [...a].sort((p, q) => p - q), h = x.length >> 1; return x.length % 2 ? x[h] : (x[h - 1] + x[h]) / 2; };
@@ -718,15 +719,18 @@ function noteScore(e, lag){
   const from = e.t + lag, len = e.dur + (e.dur < 0.25 ? 0.12 : 0), skip = e.glide ? 0 : e.dur >= 0.25 ? e.dur * 0.3 : 0.05;
   const all = hist.filter(h => h.p >= from && h.p < from + len), v = all.filter(h => h.m !== null);
   if (all.length < 2) return null;                                   // too fast to hear reliably
-  if (!v.length) return { s:0, n:0 };
+  if (!v.length) return { s:0, f:0, n:0 };
   const core = v.filter(h => h.p >= from + skip), use = core.length ? core : v;
-  const err = h => {
-    if (!e.glide) return foldC(h.m - e.notes[0]);
+  const goal = h => {
+    if (!e.glide) return e.notes[0];
     const x = Math.max(0, Math.min(1, (h.p - from) / e.dur)) * (e.glide.length - 1), j = Math.min(e.glide.length - 2, Math.floor(x));
-    return Math.abs(foldC(h.m - e.glide[j] - (e.glide[j + 1] - e.glide[j]) * (x - j)));
+    return e.glide[j] + (e.glide[j + 1] - e.glide[j]) * (x - j);
   };
+  const err = h => { const c = foldC(h.m - goal(h)); return e.glide ? Math.abs(c) : c; };
+  const away = use.filter(h => Math.round((h.m - goal(h)) / 12) !== 0).length > use.length * OCT_SHARE;
   const c = Math.abs(medOf(use.map(err))), drift = v.reduce((a, h) => a + Math.min(150, Math.abs(err(h))), 0) / v.length;
-  return { s: Math.max(0, Math.min(1, (ZERO - c) / (ZERO - FULL))) * Math.min(1, v.length / Math.max(1, Math.ceil(all.length * 0.35))), n:v.length, drift };
+  const f = Math.max(0, Math.min(1, (ZERO - c) / (ZERO - FULL))) * Math.min(1, v.length / Math.max(1, Math.ceil(all.length * 0.35)));
+  return { s: away ? 0 : f, f, oct: away && f > 0, n:v.length, drift };
 }
 function scoreKey(k){
   const ev = P.ev.filter(e => e.k === k && !e.cue), last = ev[ev.length - 1];
@@ -736,11 +740,11 @@ function scoreKey(k){
     const ns = ev.map(e => noteScore(e, lag)).filter(Boolean);
     if (!ns.length) return;
     const sung = ns.filter(x => x.n), hit = ns.reduce((a, x) => a + x.s, 0), off = sung.reduce((a, x) => a + x.drift, 0) / Math.max(1, sung.length);
-    const fit = hit / ns.length - off / 150;
-    if (!best || fit > best.fit + 1e-6) best = { fit, lag, n:ns.length, hit, sung:sung.length };
+    const fit = ns.reduce((a, x) => a + x.f, 0) / ns.length - off / 150;
+    if (!best || fit > best.fit + 1e-6) best = { fit, lag, n:ns.length, hit, sung:sung.length, oct:ns.filter(x => x.oct).length, f:ns.reduce((a, x) => a + x.f, 0) };
   }
-  stats[k] = { n:best.n, hit:best.hit, sung:best.sung };
-  if (best.hit / best.n >= 0.6) lagEst = lagEst * 0.5 + best.lag * 0.5;
+  stats[k] = { n:best.n, hit:best.hit, sung:best.sung, oct:best.oct };
+  if (best.f / best.n >= 0.6) lagEst = lagEst * 0.5 + best.lag * 0.5;
 }
 /* keep a short history of what was sung, and score a key once the late voice has had time to arrive */
 function follow(raw){
@@ -756,7 +760,7 @@ function follow(raw){
   }
 }
 const sungKeys = () => Object.entries(stats).filter(([, s]) => s.sung);
-let errBuf = [], errEv = null, smC = null, gap = 0, shownCls = null, candCls = null, candN = 0;
+let errBuf = [], octBuf = [], errEv = null, smC = null, gap = 0, shownCls = null, candCls = null, candN = 0;
 function micTick(){
   analyser.getFloatTimeDomainData(micBuf);
   const f = detectPitch(micBuf, ctx.sampleRate);
@@ -768,7 +772,9 @@ function micTick(){
   if (!tg || tg.e !== errEv) { errBuf = []; errEv = tg ? tg.e : null; if (!tg) smC = null; }
   follow(raw);
   if (raw !== null && tg) {
-    let d = raw - tg.m; d -= 12 * Math.round(d / 12);
+    let d = raw - tg.m; const oc = Math.round(d / 12); d -= 12 * oc;
+    if (!errBuf.length) octBuf = [];
+    octBuf.push(oc); if (octBuf.length > 6) octBuf.shift();
     errBuf.push(d * 100); if (errBuf.length > 6) errBuf.shift();
   }
   gap = raw === null ? gap + 1 : 0;
@@ -779,12 +785,13 @@ function micTick(){
     const keep = errBuf.filter(c => Math.abs(c - med) <= 60), avg = keep.reduce((x, y) => x + y, 0) / keep.length;
     smC = smC === null || Math.abs(avg - smC) > 80 ? avg : smC + 0.45 * (avg - smC);
     const cents = Math.round(smC), a = Math.abs(cents);
-    const now = a <= 40 ? 'good' : a <= 75 ? (cents > 0 ? 'warnH' : 'warnL') : (cents > 0 ? 'offH' : 'offL');
+    const ol = octBuf.filter(x => x < 0).length, oh = octBuf.filter(x => x > 0).length, need = Math.max(2, octBuf.length * OCT_SHARE);
+    const now = ol >= need ? 'octL' : oh >= need ? 'octH' : a <= 40 ? 'good' : a <= 75 ? (cents > 0 ? 'warnH' : 'warnL') : (cents > 0 ? 'offH' : 'offL');
     if (now === candCls) candN++; else { candCls = now; candN = 1; }
     if (shownCls === null || candN >= 3) shownCls = candCls;
-    cls = shownCls === 'good' ? 'good' : shownCls.slice(0, -1);
-    text = { good:t().inTune, warnH:t().sharpS, warnL:t().flatS, offH:t().sharp, offL:t().flat }[shownCls];
-    needle.style.left = (50 + Math.max(-50, Math.min(50, smC / 2))) + '%';
+    cls = shownCls === 'good' ? 'good' : shownCls.slice(0, -1).replace('oct', 'warn');
+    text = { good:t().inTune, warnH:t().sharpS, warnL:t().flatS, offH:t().sharp, offL:t().flat, octL:t().octLow, octH:t().octHigh }[shownCls];
+    needle.style.left = (shownCls === 'octL' ? 0 : shownCls === 'octH' ? 100 : 50 + Math.max(-50, Math.min(50, smC / 2))) + '%';
     $('myNote').textContent = t().myNote(noteLabel(Math.round(m ?? tg.m + smC / 100)), cents);
   } else if (tg && smC !== null && gap <= 6) {
     return; // between notes or a brief gap: keep the needle where it is
@@ -804,8 +811,10 @@ function scoreSummary(){
   const rate = ([, s]) => s.hit / s.n;
   entries.sort((x, y) => rate(y) - rate(x));
   const name = k => noteLabel(P.keys[+k].root);
+  const octKeys = entries.filter(([, x]) => x.oct > x.n / 2).length;
+  if (octKeys && octKeys === entries.length) return t().octKeys(octKeys);
   const best = entries[0], worst = entries[entries.length - 1];
-  return t().doneScore(Math.round(tot.h / tot.n * 100), name(best[0]), entries.length > 1 && rate(worst) < 0.7 ? name(worst[0]) : '') + ' ' + t().sungOf(entries.length, P.keys.length);
+  return t().doneScore(Math.round(tot.h / tot.n * 100), name(best[0]), entries.length > 1 && rate(worst) < 0.7 ? name(worst[0]) : '') + ' ' + t().sungOf(entries.length, P.keys.length) + (octKeys ? ' ' + t().octKeys(octKeys) : '');
 }
 function micMessage(key, err){ const el = $('micMsg'); el.dataset.key = key; el.textContent = t()[key]; el.classList.toggle('err', !!err); }
 function listenTo(stream){
