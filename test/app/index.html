@@ -155,7 +155,7 @@ details.manual[open] summary{margin-bottom:10px}
 details.manual .range .step{background:var(--bg)}
 .meter{display:grid;gap:6px;cursor:default}
 .meter-bar{position:relative;height:10px;border-radius:999px;background:var(--stage-dim)}
-.meter-bar::before{content:"";position:absolute;left:35%;right:35%;top:0;bottom:0;border-radius:999px;background:color-mix(in srgb,var(--good) 40%,transparent)}
+.meter-bar::before{content:"";position:absolute;left:30%;right:30%;top:0;bottom:0;border-radius:999px;background:color-mix(in srgb,var(--good) 40%,transparent)}
 .meter-bar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--stage-muted);transform:translateX(-50%)}
 .needle{position:absolute;top:-5px;width:6px;height:20px;border-radius:3px;background:var(--stage-muted);left:50%;transform:translateX(-50%);transition:left .15s ease-out,background-color .2s;z-index:1}
 .needle.good{background:var(--good)} .needle.warn{background:var(--warn)} .needle.off{background:var(--off)}
@@ -642,7 +642,7 @@ function begin(from){
   timer = setInterval(schedule, 40); schedule();
   state = 'playing'; paint(); requestAnimationFrame(loop);
 }
-function play(){ if (state === 'playing') return; if (state !== 'paused') { stats = {}; note = null; } begin(state === 'paused' ? P.keys[keyAt(pos)].t : (state === 'done' ? 0 : pos)); }
+function play(){ if (state === 'playing') return; if (state !== 'paused') { stats = {}; } hist = []; keyDone = -1; begin(state === 'paused' ? P.keys[keyAt(pos)].t : (state === 'done' ? 0 : pos)); }
 
 /* ---------- pitch feedback (microphone) ---------- */
 let mic = null, analyser = null, micBuf = null, micTimer = null, stats = {}, recent = [];
@@ -680,7 +680,7 @@ function detectPitch(buf, sr){
 }
 function targetNow(){
   if (state !== 'playing') return null;
-  const p = ctx.currentTime - t0;
+  const p = ctx.currentTime - t0 - lagEst;
   let cur = null; for (const e of P.ev) { if (e.t <= p) cur = e; else break; }
   if (!cur || cur.cue || p > cur.t + cur.dur + (cur.dur < 0.25 ? 0.15 : 0.05)) return null; // short notes get extra time for a late voice
   if (cur.glide) { const x = Math.min(1, (p - cur.t) / cur.dur) * (cur.glide.length - 1), j = Math.min(cur.glide.length - 2, Math.floor(x)); return { m: cur.glide[j] + (cur.glide[j + 1] - cur.glide[j]) * (x - j), k: cur.k, e: cur }; }
@@ -688,15 +688,55 @@ function targetNow(){
 }
 const noteLabel = m => L === 'ko' ? korOct(m) : sci(m);
 /* smoothing: average the error over ~0.3 s (rides out vibrato), hold through short gaps, debounce the verdict */
-/* score per note, not per moment of sound: a note you skip counts as missed. A key sung with no sound at all is treated as a rest. */
-let note = null;
-function closeNote(){
-  const n = note; note = null;
-  if (!n || n.first > 0.25 || n.last < n.e.dur * 0.6) return; // paused, seeked or mic turned on midway: don't judge
-  if (!n.n && n.ticks < 4) return;                            // too fast to hear reliably
-  const s = stats[n.e.k] || (stats[n.e.k] = { hit:0, n:0, sung:0 });
-  s.n++; if (n.n) s.sung++;
-  s.hit += n.n ? Math.min(1, n.hit / Math.max(n.n, Math.ceil(n.ticks * 0.4))) : 0;
+/* Score each key after it ends, the way a listener would:
+   - the voice always arrives late (speaker, reaction, mic), so find the delay that fits the whole key, up to MAX_LAG
+   - skip the start of each note (sliding in from the last note), then take the middle pitch so vibrato doesn't count against you
+   - within FULL cents is a full hit, a whole semitone off is zero
+   A skipped note counts as missed. A key sung with no sound at all is treated as a rest. */
+const FULL = 45, ZERO = 100, MAX_LAG = 0.4;
+let hist = [], keyDone = -1, lagEst = 0.15;
+const foldC = d => (d - 12 * Math.round(d / 12)) * 100;
+const medOf = a => { const x = [...a].sort((p, q) => p - q), h = x.length >> 1; return x.length % 2 ? x[h] : (x[h - 1] + x[h]) / 2; };
+function noteScore(e, lag){
+  const from = e.t + lag, len = e.dur + (e.dur < 0.25 ? 0.12 : 0), skip = e.glide ? 0 : e.dur >= 0.25 ? e.dur * 0.3 : 0.05;
+  const all = hist.filter(h => h.p >= from && h.p < from + len), v = all.filter(h => h.m !== null);
+  if (all.length < 2) return null;                                   // too fast to hear reliably
+  if (!v.length) return { s:0, n:0 };
+  const core = v.filter(h => h.p >= from + skip), use = core.length ? core : v;
+  const err = h => {
+    if (!e.glide) return foldC(h.m - e.notes[0]);
+    const x = Math.max(0, Math.min(1, (h.p - from) / e.dur)) * (e.glide.length - 1), j = Math.min(e.glide.length - 2, Math.floor(x));
+    return Math.abs(foldC(h.m - e.glide[j] - (e.glide[j + 1] - e.glide[j]) * (x - j)));
+  };
+  const c = Math.abs(medOf(use.map(err))), drift = v.reduce((a, h) => a + Math.min(150, Math.abs(err(h))), 0) / v.length;
+  return { s: Math.max(0, Math.min(1, (ZERO - c) / (ZERO - FULL))) * Math.min(1, v.length / Math.max(1, Math.ceil(all.length * 0.35))), n:v.length, drift };
+}
+function scoreKey(k){
+  const ev = P.ev.filter(e => e.k === k && !e.cue), last = ev[ev.length - 1];
+  if (!hist.length || hist[0].p > ev[0].t + 0.1 || hist[hist.length - 1].p < last.t + last.dur) return; // paused, seeked or mic turned on midway: don't judge
+  let best = null;
+  for (let lag = 0; lag <= MAX_LAG + 0.001; lag += 0.05) {
+    const ns = ev.map(e => noteScore(e, lag)).filter(Boolean);
+    if (!ns.length) return;
+    const sung = ns.filter(x => x.n), hit = ns.reduce((a, x) => a + x.s, 0), off = sung.reduce((a, x) => a + x.drift, 0) / Math.max(1, sung.length);
+    const fit = hit / ns.length - off / 150;
+    if (!best || fit > best.fit + 1e-6) best = { fit, lag, n:ns.length, hit, sung:sung.length };
+  }
+  stats[k] = { n:best.n, hit:best.hit, sung:best.sung };
+  if (best.hit / best.n >= 0.6) lagEst = lagEst * 0.5 + best.lag * 0.5;
+}
+/* keep a short history of what was sung, and score a key once the late voice has had time to arrive */
+function follow(raw){
+  if (state !== 'playing') return;
+  const p = ctx.currentTime - t0, prev = hist.length ? hist[hist.length - 1].p : null;
+  if (prev !== null && (p < prev || p - prev > 0.4)) { hist = []; keyDone = -1; }
+  if (!hist.length) keyDone = -1;
+  hist.push({ p, m:raw });
+  for (let k = Math.max(0, keyDone + 1); k < P.keys.length; k++) {
+    if (p < (k + 1 < P.keys.length ? P.keys[k + 1].t : P.total - 0.15)) break;
+    if (P.keys[k].t >= hist[0].p - 0.5) scoreKey(k);
+    keyDone = k; hist = hist.filter(h => h.p > p - 0.6);
+  }
 }
 const sungKeys = () => Object.entries(stats).filter(([, s]) => s.sung);
 let errBuf = [], errEv = null, smC = null, gap = 0, shownCls = null, candCls = null, candN = 0;
@@ -709,12 +749,7 @@ function micTick(){
   const m = voiced.length >= 2 ? [...voiced].sort((x, y) => x - y)[Math.floor(voiced.length / 2)] : null;
   const tg = targetNow(), needle = $('needle'), vd = $('verdict');
   if (!tg || tg.e !== errEv) { errBuf = []; errEv = tg ? tg.e : null; if (!tg) smC = null; }
-  if (note && (!tg || tg.e !== note.e)) closeNote();
-  if (tg) {
-    const at = ctx.currentTime - t0 - tg.e.t;
-    if (!note) note = { e:tg.e, first:at, last:at, ticks:0, n:0, hit:0 };
-    note.ticks++; note.last = at;
-  }
+  follow(raw);
   if (raw !== null && tg) {
     let d = raw - tg.m; d -= 12 * Math.round(d / 12);
     errBuf.push(d * 100); if (errBuf.length > 6) errBuf.shift();
@@ -727,13 +762,12 @@ function micTick(){
     const keep = errBuf.filter(c => Math.abs(c - med) <= 60), avg = keep.reduce((x, y) => x + y, 0) / keep.length;
     smC = smC === null || Math.abs(avg - smC) > 80 ? avg : smC + 0.45 * (avg - smC);
     const cents = Math.round(smC), a = Math.abs(cents);
-    const now = a <= 20 ? 'good' : a <= 50 ? (cents > 0 ? 'warnH' : 'warnL') : (cents > 0 ? 'offH' : 'offL');
+    const now = a <= 40 ? 'good' : a <= 75 ? (cents > 0 ? 'warnH' : 'warnL') : (cents > 0 ? 'offH' : 'offL');
     if (now === candCls) candN++; else { candCls = now; candN = 1; }
     if (shownCls === null || candN >= 3) shownCls = candCls;
     cls = shownCls === 'good' ? 'good' : shownCls.slice(0, -1);
     text = { good:t().inTune, warnH:t().sharpS, warnL:t().flatS, offH:t().sharp, offL:t().flat }[shownCls];
-    needle.style.left = (50 + Math.max(-50, Math.min(50, smC))) + '%';
-    if (raw !== null) { note.n++; if (a <= 35) note.hit++; }
+    needle.style.left = (50 + Math.max(-50, Math.min(50, smC / 2))) + '%';
     $('myNote').textContent = t().myNote(noteLabel(Math.round(m ?? tg.m + smC / 100)), cents);
   } else if (tg && smC !== null && gap <= 6) {
     return; // between notes or a brief gap: keep the needle where it is
