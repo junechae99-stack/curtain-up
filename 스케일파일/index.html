@@ -595,7 +595,8 @@ let P = buildPlan(), state = 'idle', pos = 0;
 /* iPhone plays through its call sound path while the mic is on, at a different loudness: the piano gets its own level then */
 const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const micVol = () => S.micVol >= 0.1 && S.micVol <= 1 ? +S.micVol : (IOS ? 0.5 : 1);
-const level = () => 0.22 * (mic ? micVol() : 1);
+let quiet = false; // silent while the phone switches its sound path
+const level = () => quiet ? 0.0001 : 0.22 * (mic ? micVol() : 1);
 function applyLevel(){ if (master) master.gain.setTargetAtTime(level(), ctx.currentTime, 0.05); }
 let stale = false; // the phone slept or we left the app: iPhone can leave the old sound engine frozen for good, so start a new one on the next tap
 function ensureAudio(){
@@ -872,6 +873,28 @@ async function wakeOn(){
   if (state !== 'playing') wakeOff();
 }
 function wakeOff(){ const w = wake; wake = null; if (w) w.release().catch(() => {}); }
+/* Turning the mic on or off makes the phone switch its sound path, which crackles if the piano is sounding.
+   On: pause, switch, go on from this key's chord. Off: fade out, switch, fade back in. */
+const wait = ms => new Promise(ok => setTimeout(ok, ms));
+let switching = false;
+async function switchMic(){
+  if (switching) return;
+  switching = true; $('micBtn').disabled = true;
+  try {
+    if (mic) {
+      const on = state === 'playing';
+      if (on) { quiet = true; applyLevel(); await wait(250); }
+      micOff();
+      if (on) await wait(400);
+    } else {
+      const on = state === 'playing';
+      if (on) { pause(); await wait(250); }
+      await micOn();
+      if (document.hidden) { if (mic) leave(); }
+      else if (on) { await wait(400); if (state === 'paused' && !stale && !document.hidden) play(); }
+    }
+  } finally { quiet = false; applyLevel(); switching = false; $('micBtn').disabled = false; }
+}
 function leave(){ pause(); stale = true; if (mic) { micOff(); micMessage('micAway'); } }
 document.addEventListener('visibilitychange', () => { if (document.hidden) leave(); });
 window.addEventListener('pagehide', leave);
@@ -1054,7 +1077,7 @@ $('playBtn').onclick = () => state === 'playing' ? pause() : play();
 $('resetBtn').onclick = () => toIdle();
 ['voicesM','voicesF'].forEach(id => $(id).onclick = e => { const b = e.target.closest('.chip'); if (!b) return;
   change(() => { const v = VOICES.find(x => x.id === b.dataset.id); S.voice = v.id; S.low = v.low; S.top = v.top; }); });
-$('micBtn').onclick = () => mic ? micOff() : micOn();
+$('micBtn').onclick = switchMic;
 $('micVol').oninput = e => { S.micVol = +e.target.value; persist(); applyLevel(); $('micVolVal').textContent = Math.round(S.micVol * 100) + '%'; };
 $('noMelody').onchange = e => { S.noMelody = e.target.checked; persist(); };
 $('modeTabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.v; renderControls(); };
