@@ -272,12 +272,12 @@ details.manual .range .step{background:var(--bg)}
 <script>
 /* ---------- i18n ---------- */
 const T = {
-ko:{ tagline:'무대 오르기 전 목풀기', hVoice:'내 목소리', hMode:'연습 방식', tabSingle:'연습 하나', tabRoutine:'루틴 코스', tabBuild:'내 패턴 만들기',
+ko:{ tagline:'노래하기 전 가볍게 목풀기', hVoice:'내 목소리', hMode:'연습 방식', tabSingle:'연습 하나', tabRoutine:'루틴 코스', tabBuild:'내 패턴 만들기',
   hRange:'음역', low:'시작 키', top:'가장 높은 음', hTempo:'속도와 방향', slow:'느리게', medium:'보통', fast:'빠르게', both:'올라갔다 내려오기', up:'올라가기만',
   note:'연습 화면을 누르면 일시정지, 다시 누르면 그 키의 화음부터 이어서 재생돼요. 진행 막대를 끌면 원하는 키로 이동해요. 아이폰은 무음 모드를 끄면 소리가 나요. 목이 아프면 바로 멈추고 쉬어 주세요.',
   reset:'처음으로', start:'▶ 연습 시작', pause:'❚❚ 일시정지', resume:'▶ 이어서', again:'↻ 다시 하기',
   st:{ idle:'준비', playing:'연습 중', paused:'일시정지', done:'완료' },
-  cueIdle:'화면이나 아래 버튼을 누르면 피아노가 화음으로 키를 먼저 알려 줘요', cuePaused:'화면을 누르면 이 키의 화음부터 이어서 불러요', cueDone:'수고했어요. 물 한 모금 마시고 무대로!',
+  cueIdle:'화면이나 아래 버튼을 누르면 피아노가 화음으로 키를 먼저 알려 줘요', cuePaused:'화면을 누르면 이 키의 화음부터 이어서 불러요', cueDone:'수고했어요. 물 한 모금 마시고 즐겁게 노래해요!',
   cueChord:'화음을 듣고 숨 준비', cueSing:'따라 부르세요', cueEmpty:'음역이 좁아서 재생할 키가 없어요',
   keys:(a,b)=>`${a} / ${b} 키`, keysNone:'0 키',
   summary:(lo,tp,n,t)=>`${lo}에서 시작 · 꼭대기 ${tp} · ${n}키 · 약 ${t}`,
@@ -285,7 +285,7 @@ ko:{ tagline:'무대 오르기 전 목풀기', hVoice:'내 목소리', hMode:'�
   all:'전체', mine:'내 패턴', emptyMine:'아직 만든 패턴이 없어요. "내 패턴 만들기" 탭에서 만들어 보세요.', del:'삭제',
   approx:t=>`약 ${t}`, narrow:'음역이 좁아요', seqHint:'아래 건반을 눌러 음을 순서대로 넣어요 (최대 16개)', octUp:'한 옥타브 위',
   undo:'한 음 지우기', clear:'모두 지우기', tryIt:'들어 보기', namePh:'패턴 이름 (예: 내 고음 루틴)', save:'저장', myN:n=>`내 패턴 ${n}`, draft:'만드는 중인 패턴',
-  stageAria:'눌러서 재생 또는 일시정지', seekAria:'연습할 키로 이동', lowDown:'시작 키 낮추기', lowUp:'시작 키 높이기', topDown:'최고음 낮추기', topUp:'최고음 높이기', badge:'배우 루틴',
+  stageAria:'눌러서 재생 또는 일시정지', seekAria:'연습할 키로 이동', lowDown:'시작 키 낮추기', lowUp:'시작 키 높이기', topDown:'최고음 낮추기', topUp:'최고음 높이기', badge:'추천',
   cats:{ wake:'목 깨우기', range:'음역 넓히기', agile:'민첩성', pitch:'음정 다듬기' },
   voices:{ bass:['남성 저음','베이스 · 바리톤'], tenor:['남성 고음','테너 · 뮤지컬 남성'], alto:['여성 저음','알토 · 메조'], sop:['여성 고음','소프라노'] },
   ex:{ three:['3음 스케일','허밍이나 립트릴로 가볍게 시작해요.'], siren:['5도 사이렌','"브르르" 립트릴로 미끄러지듯 오르내려요.'],
@@ -293,14 +293,14 @@ ko:{ tagline:'무대 오르기 전 목풀기', hVoice:'내 목소리', hMode:'�
     octjump:['옥타브 점프','"야" 모음으로 높은 도에 가볍게 착지해요.'], nine:['9도 롱 스케일','한 호흡에 끝까지. 숨이 모자라면 속도를 올려요.'],
     stacc:['스타카토 아르페지오','"하 하 하" 배에서 짧게 튕겨요.'], fast5:['빠른 5음 왕복','"냐"로 굴리듯. 정확함이 속도보다 먼저예요.'],
     thirds:['3도 도약','두 음씩 짝지어 또박또박 짚어요.'], minor:['단조 5음 스케일','미♭의 어두운 색을 귀로 느끼며.'], chrom:['반음계','반음 간격을 하나도 뭉개지 않게 천천히.'] },
-  routines:{ light:['가볍게 깨우기','아침이나 출근길에. 목에 부담 없이 시작해요.'], audition:['오디션 전 풀코스','무대 전에 목을 끝까지 열어요.'],
-    high:['고음 집중','꼭대기 음을 편하게 만드는 코스예요.'], pitch:['음정 다듬기','귀와 목을 같이 훈련해요.'] } },
-en:{ tagline:'Warm up before you take the stage', hVoice:'Your voice', hMode:'How to practice', tabSingle:'Exercises', tabRoutine:'Routines', tabBuild:'Create',
+  routines:{ light:['가볍게 5분 목풀기','아침이나 출근길에. 목에 부담 없이 시작해요.'], audition:['꼼꼼하게 10분 목풀기','충분히 풀고 싶은 날에 골라요.'],
+    high:['고음 곡 부르기 전','꼭대기 음을 편하게 만드는 코스예요.'], pitch:['음정 다듬기','귀와 목을 같이 훈련해요.'] } },
+en:{ tagline:'An easy warm-up before you sing', hVoice:'Your voice', hMode:'How to practice', tabSingle:'Exercises', tabRoutine:'Routines', tabBuild:'Create',
   hRange:'Range', low:'Starting key', top:'Highest note', hTempo:'Speed & direction', slow:'Slow', medium:'Medium', fast:'Fast', both:'Up and back down', up:'Up only',
   note:'Tap the stage to pause, tap again to resume from that key’s chord. Drag the bar to jump to any key. On iPhone, turn off silent mode to hear sound. If your throat hurts, stop and rest.',
   reset:'Restart', start:'▶ Start', pause:'❚❚ Pause', resume:'▶ Resume', again:'↻ Again',
   st:{ idle:'Ready', playing:'Singing', paused:'Paused', done:'Done' },
-  cueIdle:'Tap the stage or the button below. The piano plays the key’s chord first.', cuePaused:'Tap to resume from this key’s chord', cueDone:'Nice work. Grab some water and go shine!',
+  cueIdle:'Tap the stage or the button below. The piano plays the key’s chord first.', cuePaused:'Tap to resume from this key’s chord', cueDone:'Nice work. Grab some water and enjoy singing!',
   cueChord:'Listen to the chord and breathe in', cueSing:'Sing along', cueEmpty:'The range is too narrow to play any key',
   keys:(a,b)=>`Key ${a} / ${b}`, keysNone:'0 keys',
   summary:(lo,tp,n,t)=>`Starts on ${lo} · tops out at ${tp} · ${n} keys · about ${t}`,
@@ -308,7 +308,7 @@ en:{ tagline:'Warm up before you take the stage', hVoice:'Your voice', hMode:'Ho
   all:'All', mine:'My patterns', emptyMine:'No patterns yet. Make one in the Create tab.', del:'Delete',
   approx:t=>`about ${t}`, narrow:'Range too narrow', seqHint:'Tap the keys below to add notes in order (up to 16)', octUp:'octave up',
   undo:'Undo', clear:'Clear', tryIt:'Listen', namePh:'Pattern name (e.g. My high-note drill)', save:'Save', myN:n=>`My pattern ${n}`, draft:'Pattern in progress',
-  stageAria:'Tap to play or pause', seekAria:'Jump to a key', lowDown:'Lower starting key', lowUp:'Raise starting key', topDown:'Lower highest note', topUp:'Raise highest note', badge:'Actor’s routine',
+  stageAria:'Tap to play or pause', seekAria:'Jump to a key', lowDown:'Lower starting key', lowUp:'Raise starting key', topDown:'Lower highest note', topUp:'Raise highest note', badge:'Popular pick',
   cats:{ wake:'Wake up', range:'Extend range', agile:'Agility', pitch:'Pitch' },
   voices:{ bass:['Low male','Bass · Baritone'], tenor:['High male','Tenor · Musical theatre'], alto:['Low female','Alto · Mezzo'], sop:['High female','Soprano'] },
   ex:{ three:['3-note scale','Start gently on a hum or lip trill.'], siren:['Fifth siren','Glide up and down on a "brrr" lip trill.'],
@@ -316,14 +316,14 @@ en:{ tagline:'Warm up before you take the stage', hVoice:'Your voice', hMode:'Ho
     octjump:['Octave leap','Land lightly on the top note with "yah".'], nine:['Ninth long scale','All in one breath. Speed up if you run out of air.'],
     stacc:['Staccato arpeggio','"Ha ha ha" bounced from the belly.'], fast5:['Fast 5-note run','Roll it on "nya". Accuracy before speed.'],
     thirds:['Thirds','Pair the notes and hit each one cleanly.'], minor:['Minor 5-note scale','Listen for the darker color of the flat third.'], chrom:['Chromatic','Slowly, keeping every half step distinct.'] },
-  routines:{ light:['Gentle wake-up','For mornings or the commute. Easy on the voice.'], audition:['Pre-audition full set','Fully open your voice before the stage.'],
-    high:['High-note focus','Makes the top of your range feel easy.'], pitch:['Pitch polish','Train your ear and voice together.'] } },
-ja:{ tagline:'ステージ前のウォームアップ', hVoice:'あなたの声', hMode:'練習スタイル', tabSingle:'単体練習', tabRoutine:'ルーティン', tabBuild:'パターン作成',
+  routines:{ light:['Easy 5-minute warm-up','For mornings or the commute. Easy on the voice.'], audition:['Thorough 10-minute warm-up','For days you want to take your time.'],
+    high:['Before a high song','Makes the top of your range feel easy.'], pitch:['Pitch polish','Train your ear and voice together.'] } },
+ja:{ tagline:'歌う前の気軽なウォームアップ', hVoice:'あなたの声', hMode:'練習スタイル', tabSingle:'単体練習', tabRoutine:'ルーティン', tabBuild:'パターン作成',
   hRange:'音域', low:'開始キー', top:'最高音', hTempo:'速さと方向', slow:'ゆっくり', medium:'ふつう', fast:'速く', both:'上がって下がる', up:'上がるだけ',
   note:'練習画面をタップすると一時停止、もう一度タップするとそのキーの和音から再開します。バーをドラッグすると好きなキーへ移動できます。iPhoneはマナーモードを解除すると音が出ます。喉が痛いときはすぐ休んでください。',
   reset:'最初から', start:'▶ スタート', pause:'❚❚ 一時停止', resume:'▶ 再開', again:'↻ もう一度',
   st:{ idle:'準備OK', playing:'練習中', paused:'一時停止', done:'完了' },
-  cueIdle:'画面か下のボタンをタップ。ピアノが先に和音でキーを知らせます', cuePaused:'タップするとこのキーの和音から再開します', cueDone:'お疲れさまでした。水を一口飲んでステージへ!',
+  cueIdle:'画面か下のボタンをタップ。ピアノが先に和音でキーを知らせます', cuePaused:'タップするとこのキーの和音から再開します', cueDone:'お疲れさまでした。水を一口飲んで楽しく歌いましょう!',
   cueChord:'和音を聴いて息を準備', cueSing:'一緒に歌って', cueEmpty:'音域が狭くて再生できるキーがありません',
   keys:(a,b)=>`キー ${a} / ${b}`, keysNone:'0 キー',
   summary:(lo,tp,n,t)=>`${lo}から開始 · 最高 ${tp} · ${n}キー · 約${t}`,
@@ -331,7 +331,7 @@ ja:{ tagline:'ステージ前のウォームアップ', hVoice:'あなたの声'
   all:'すべて', mine:'マイパターン', emptyMine:'まだパターンがありません。「パターン作成」タブで作ってみましょう。', del:'削除',
   approx:t=>`約${t}`, narrow:'音域が狭い', seqHint:'下の鍵盤をタップして音を順番に入れます(最大16個)', octUp:'1オクターブ上',
   undo:'1音消す', clear:'全部消す', tryIt:'聴いてみる', namePh:'パターン名(例:高音ルーティン)', save:'保存', myN:n=>`マイパターン ${n}`, draft:'作成中のパターン',
-  stageAria:'タップで再生・一時停止', seekAria:'キーへ移動', lowDown:'開始キーを下げる', lowUp:'開始キーを上げる', topDown:'最高音を下げる', topUp:'最高音を上げる', badge:'俳優ルーティン',
+  stageAria:'タップで再生・一時停止', seekAria:'キーへ移動', lowDown:'開始キーを下げる', lowUp:'開始キーを上げる', topDown:'最高音を下げる', topUp:'最高音を上げる', badge:'おすすめ',
   cats:{ wake:'ウォームアップ', range:'音域を広げる', agile:'敏捷性', pitch:'音程' },
   voices:{ bass:['男性・低音','バス · バリトン'], tenor:['男性・高音','テノール · ミュージカル'], alto:['女性・低音','アルト · メゾ'], sop:['女性・高音','ソプラノ'] },
   ex:{ three:['3音スケール','ハミングかリップトリルで軽く始めましょう。'], siren:['5度サイレン','リップトリルで滑らかに上下します。'],
@@ -339,14 +339,14 @@ ja:{ tagline:'ステージ前のウォームアップ', hVoice:'あなたの声'
     octjump:['オクターブ跳躍','「ヤ」で高いドに軽く着地。'], nine:['9度ロングスケール','ひと息で最後まで。息が足りなければ速度を上げて。'],
     stacc:['スタッカートアルペジオ','「ハッハッハッ」とお腹から短く。'], fast5:['速い5音往復','「ニャ」で転がすように。速さより正確さ。'],
     thirds:['3度跳躍','2音ずつ組にして、はっきりと。'], minor:['短調5音スケール','ミ♭の暗い響きを耳で感じて。'], chrom:['半音階','半音を一つもつぶさず、ゆっくり。'] },
-  routines:{ light:['軽く起こす','朝や通勤中に。喉に負担なく始めます。'], audition:['オーディション前フルコース','ステージ前に声をしっかり開きます。'],
-    high:['高音集中','てっぺんの音を楽にするコース。'], pitch:['音程を整える','耳と声を一緒に鍛えます。'] } },
-zh:{ tagline:'上台前的开嗓练习', hVoice:'你的声部', hMode:'练习方式', tabSingle:'单项练习', tabRoutine:'组合课程', tabBuild:'自建音型',
+  routines:{ light:['気軽に5分ウォームアップ','朝や通勤中に。喉に負担なく始めます。'], audition:['じっくり10分ウォームアップ','しっかりほぐしたい日に。'],
+    high:['高い曲を歌う前に','てっぺんの音を楽にするコース。'], pitch:['音程を整える','耳と声を一緒に鍛えます。'] } },
+zh:{ tagline:'唱歌前的轻松开嗓', hVoice:'你的声部', hMode:'练习方式', tabSingle:'单项练习', tabRoutine:'组合课程', tabBuild:'自建音型',
   hRange:'音域', low:'起始调', top:'最高音', hTempo:'速度与方向', slow:'慢', medium:'中', fast:'快', both:'上行再下行', up:'只上行',
   note:'点击练习画面暂停,再点一次从该调的和弦继续。拖动进度条可跳到任意调。iPhone 需关闭静音模式才有声音。嗓子疼请立刻停下休息。',
   reset:'从头开始', start:'▶ 开始练习', pause:'❚❚ 暂停', resume:'▶ 继续', again:'↻ 再来一遍',
   st:{ idle:'准备', playing:'练习中', paused:'已暂停', done:'完成' },
-  cueIdle:'点击画面或下方按钮,钢琴会先用和弦告诉你调', cuePaused:'点击后从这个调的和弦继续', cueDone:'辛苦了!喝口水,上台吧!',
+  cueIdle:'点击画面或下方按钮,钢琴会先用和弦告诉你调', cuePaused:'点击后从这个调的和弦继续', cueDone:'辛苦了!喝口水,开心唱歌吧!',
   cueChord:'听和弦,准备吸气', cueSing:'跟着唱', cueEmpty:'音域太窄,没有可播放的调',
   keys:(a,b)=>`第 ${a} / ${b} 调`, keysNone:'0 个调',
   summary:(lo,tp,n,t)=>`从 ${lo} 开始 · 最高 ${tp} · ${n} 个调 · 约 ${t}`,
@@ -354,7 +354,7 @@ zh:{ tagline:'上台前的开嗓练习', hVoice:'你的声部', hMode:'练习方
   all:'全部', mine:'我的音型', emptyMine:'还没有音型。去“自建音型”里做一个吧。', del:'删除',
   approx:t=>`约 ${t}`, narrow:'音域太窄', seqHint:'点击下方琴键,按顺序加入音(最多 16 个)', octUp:'高八度',
   undo:'删一个音', clear:'全部清除', tryIt:'试听', namePh:'音型名称(例:我的高音练习)', save:'保存', myN:n=>`我的音型 ${n}`, draft:'正在编辑的音型',
-  stageAria:'点击播放或暂停', seekAria:'跳到某个调', lowDown:'降低起始调', lowUp:'升高起始调', topDown:'降低最高音', topUp:'升高最高音', badge:'演员日常',
+  stageAria:'点击播放或暂停', seekAria:'跳到某个调', lowDown:'降低起始调', lowUp:'升高起始调', topDown:'降低最高音', topUp:'升高最高音', badge:'推荐',
   cats:{ wake:'唤醒嗓子', range:'拓展音域', agile:'灵活度', pitch:'音准' },
   voices:{ bass:['男低音','男低音 · 男中音'], tenor:['男高音','男高音 · 音乐剧'], alto:['女低音','女低音 · 女中音'], sop:['女高音','女高音'] },
   ex:{ three:['三音音阶','用哼鸣或唇颤音轻松开始。'], siren:['五度滑音','用“嘟噜噜”唇颤音上下滑动。'],
@@ -362,14 +362,14 @@ zh:{ tagline:'上台前的开嗓练习', hVoice:'你的声部', hMode:'练习方
     octjump:['八度跳跃','用“ya”轻轻落在高音 do 上。'], nine:['九度长音阶','一口气唱完。气不够就加快速度。'],
     stacc:['跳音琶音','“哈哈哈”从腹部短促弹出。'], fast5:['快速五音往返','用“nia”滚动着唱。准确比速度重要。'],
     thirds:['三度跳进','两个音一组,清楚地唱准。'], minor:['小调五音音阶','用耳朵感受降 mi 的暗色。'], chrom:['半音阶','慢慢唱,每个半音都不含糊。'] },
-  routines:{ light:['轻松唤醒','早上或通勤路上,不给嗓子负担。'], audition:['试镜前完整课程','上台前把嗓子完全打开。'],
-    high:['高音专练','让高音变轻松的课程。'], pitch:['音准打磨','耳朵和嗓子一起练。'] } },
-es:{ tagline:'Calienta la voz antes de salir a escena', hVoice:'Tu voz', hMode:'Modo de práctica', tabSingle:'Ejercicios', tabRoutine:'Rutinas', tabBuild:'Crear',
+  routines:{ light:['轻松 5 分钟开嗓','早上或通勤路上,不给嗓子负担。'], audition:['充分 10 分钟开嗓','想充分热身的日子选这个。'],
+    high:['唱高音歌之前','让高音变轻松的课程。'], pitch:['音准打磨','耳朵和嗓子一起练。'] } },
+es:{ tagline:'Calienta la voz antes de cantar', hVoice:'Tu voz', hMode:'Modo de práctica', tabSingle:'Ejercicios', tabRoutine:'Rutinas', tabBuild:'Crear',
   hRange:'Registro', low:'Tono inicial', top:'Nota más alta', hTempo:'Velocidad y dirección', slow:'Lento', medium:'Medio', fast:'Rápido', both:'Subir y bajar', up:'Solo subir',
   note:'Toca el escenario para pausar y otra vez para seguir desde el acorde de ese tono. Arrastra la barra para saltar a cualquier tono. En iPhone, desactiva el modo silencio. Si te duele la garganta, para y descansa.',
   reset:'Reiniciar', start:'▶ Empezar', pause:'❚❚ Pausa', resume:'▶ Seguir', again:'↻ Otra vez',
   st:{ idle:'Listo', playing:'Cantando', paused:'En pausa', done:'Terminado' },
-  cueIdle:'Toca el escenario o el botón. El piano toca primero el acorde del tono.', cuePaused:'Toca para seguir desde el acorde de este tono', cueDone:'¡Buen trabajo! Bebe agua y a brillar.',
+  cueIdle:'Toca el escenario o el botón. El piano toca primero el acorde del tono.', cuePaused:'Toca para seguir desde el acorde de este tono', cueDone:'¡Buen trabajo! Bebe agua y a disfrutar cantando.',
   cueChord:'Escucha el acorde y respira', cueSing:'Canta', cueEmpty:'El registro es demasiado estrecho para tocar algún tono',
   keys:(a,b)=>`Tono ${a} / ${b}`, keysNone:'0 tonos',
   summary:(lo,tp,n,t)=>`Empieza en ${lo} · llega a ${tp} · ${n} tonos · unos ${t}`,
@@ -377,7 +377,7 @@ es:{ tagline:'Calienta la voz antes de salir a escena', hVoice:'Tu voz', hMode:'
   all:'Todos', mine:'Mis patrones', emptyMine:'Aún no tienes patrones. Crea uno en la pestaña Crear.', del:'Borrar',
   approx:t=>`unos ${t}`, narrow:'Registro estrecho', seqHint:'Toca las teclas para añadir notas en orden (máx. 16)', octUp:'octava arriba',
   undo:'Deshacer', clear:'Borrar todo', tryIt:'Escuchar', namePh:'Nombre (p. ej. Mis agudos)', save:'Guardar', myN:n=>`Mi patrón ${n}`, draft:'Patrón en curso',
-  stageAria:'Toca para reproducir o pausar', seekAria:'Saltar a un tono', lowDown:'Bajar tono inicial', lowUp:'Subir tono inicial', topDown:'Bajar nota más alta', topUp:'Subir nota más alta', badge:'Rutina de actor',
+  stageAria:'Toca para reproducir o pausar', seekAria:'Saltar a un tono', lowDown:'Bajar tono inicial', lowUp:'Subir tono inicial', topDown:'Bajar nota más alta', topUp:'Subir nota más alta', badge:'Recomendado',
   cats:{ wake:'Despertar', range:'Ampliar registro', agile:'Agilidad', pitch:'Afinación' },
   voices:{ bass:['Hombre grave','Bajo · Barítono'], tenor:['Hombre agudo','Tenor · Teatro musical'], alto:['Mujer grave','Contralto · Mezzo'], sop:['Mujer aguda','Soprano'] },
   ex:{ three:['Escala de 3 notas','Empieza suave con un zumbido o trino de labios.'], siren:['Sirena de quinta','Desliza arriba y abajo con un trino "brrr".'],
@@ -385,14 +385,14 @@ es:{ tagline:'Calienta la voz antes de salir a escena', hVoice:'Tu voz', hMode:'
     octjump:['Salto de octava','Aterriza suave en el Do agudo con "ya".'], nine:['Escala larga de novena','Todo en una respiración. Acelera si te falta aire.'],
     stacc:['Arpegio staccato','"Ja ja ja" rebotando desde el abdomen.'], fast5:['Carrera rápida de 5 notas','Ruédala con "ña". Precisión antes que velocidad.'],
     thirds:['Terceras','Agrupa las notas de dos en dos, limpias.'], minor:['Escala menor de 5 notas','Escucha el color oscuro del Mi bemol.'], chrom:['Cromática','Despacio, cada semitono bien claro.'] },
-  routines:{ light:['Despertar suave','Para la mañana o el trayecto. Sin forzar la voz.'], audition:['Completo antes de audición','Abre la voz del todo antes de salir.'],
-    high:['Enfoque en agudos','Para que la parte alta se sienta fácil.'], pitch:['Pulir afinación','Entrena oído y voz a la vez.'] } },
+  routines:{ light:['Calentamiento suave de 5 minutos','Para la mañana o el trayecto. Sin forzar la voz.'], audition:['Calentamiento completo de 10 minutos','Para los días con más tiempo.'],
+    high:['Antes de una canción aguda','Para que la parte alta se sienta fácil.'], pitch:['Pulir afinación','Entrena oído y voz a la vez.'] } },
 };
 const EXTRA = {
 ko:{ male:'남성', female:'여성', voiceHint:'고르기만 하면 그 목소리의 평균 음역으로 자동 설정돼요.', manual:'음역 직접 조절 (선택)',
   hMic:'음정 피드백', micOn:'🎤 음정 피드백 켜기', micOff:'🎤 음정 피드백 끄기',
   micHint:'이어폰을 끼면 피아노 소리가 마이크에 섞이지 않아 더 정확해요.', noMelody:'이어폰이 없어요 (멜로디는 소리 없이 화면으로만 안내)',
-  micListening:'마이크가 켜졌어요. 연습을 시작하고 따라 불러 보세요.', micBlocked:'이 화면에서는 보안상 마이크를 쓸 수 없어요. 바탕화면의 Curtain Up 앱에서 사용해 주세요.',
+  micListening:'마이크가 켜졌어요. 연습을 시작하고 따라 불러 보세요.', micBlocked:'이 화면에서는 보안상 마이크를 쓸 수 없어요. 크롬이나 사파리에서 링크를 직접 열어 주세요.',
   micDenied:'마이크 권한이 거부됐어요. 브라우저 주소창의 사이트 설정에서 마이크를 허용해 주세요.', micNoSupport:'이 브라우저는 마이크를 지원하지 않아요.',
   inTune:'정확해요', sharpS:'조금 높아요', flatS:'조금 낮아요', sharp:'높아요', flat:'낮아요', noVoice:'소리를 내 주세요', waiting:'다음 음을 기다리는 중',
   mLow:'낮음', mHigh:'높음', myNote:(n,c)=>`내 음 ${n}${c===null?'':` · ${c>0?'+':''}${c}센트`}`, scoreLive:p=>`정확도 ${p}%`,
@@ -401,7 +401,7 @@ ko:{ male:'남성', female:'여성', voiceHint:'고르기만 하면 그 목소�
 en:{ male:'Male', female:'Female', voiceHint:'Pick one and the range is set to that voice’s typical range.', manual:'Adjust range yourself (optional)',
   hMic:'Pitch feedback', micOn:'🎤 Turn on pitch feedback', micOff:'🎤 Turn off pitch feedback',
   micHint:'Use earphones so the piano doesn’t leak into the mic.', noMelody:'No earphones (melody is shown on screen, not played)',
-  micListening:'Mic is on. Start practicing and sing along.', micBlocked:'The microphone is blocked on this screen for security. Use the Curtain Up desktop app.',
+  micListening:'Mic is on. Start practicing and sing along.', micBlocked:'The microphone is blocked on this screen for security. Open the link directly in Chrome or Safari.',
   micDenied:'Microphone access was denied. Allow it in your browser’s site settings.', micNoSupport:'This browser doesn’t support the microphone.',
   inTune:'In tune', sharpS:'A little sharp', flatS:'A little flat', sharp:'Sharp', flat:'Flat', noVoice:'Sing a note', waiting:'Waiting for the next note',
   mLow:'flat', mHigh:'sharp', myNote:(n,c)=>`You: ${n}${c===null?'':` · ${c>0?'+':''}${c} cents`}`, scoreLive:p=>`Accuracy ${p}%`,
@@ -410,7 +410,7 @@ en:{ male:'Male', female:'Female', voiceHint:'Pick one and the range is set to t
 ja:{ male:'男性', female:'女性', voiceHint:'選ぶだけでその声種の平均的な音域に自動設定されます。', manual:'音域を自分で調整(任意)',
   hMic:'音程フィードバック', micOn:'🎤 音程フィードバックをオン', micOff:'🎤 音程フィードバックをオフ',
   micHint:'イヤホンを使うとピアノの音がマイクに入らず、より正確です。', noMelody:'イヤホンなし(メロディは音を出さず画面だけで案内)',
-  micListening:'マイクがオンになりました。練習を始めて一緒に歌ってください。', micBlocked:'この画面ではセキュリティ上マイクを使えません。デスクトップのCurtain Upアプリで使ってください。',
+  micListening:'マイクがオンになりました。練習を始めて一緒に歌ってください。', micBlocked:'この画面ではセキュリティ上マイクを使えません。ChromeかSafariでリンクを直接開いてください。',
   micDenied:'マイクの許可が拒否されました。ブラウザのサイト設定で許可してください。', micNoSupport:'このブラウザはマイクに対応していません。',
   inTune:'正確です', sharpS:'少し高い', flatS:'少し低い', sharp:'高い', flat:'低い', noVoice:'声を出してください', waiting:'次の音を待っています',
   mLow:'低い', mHigh:'高い', myNote:(n,c)=>`あなたの音 ${n}${c===null?'':` · ${c>0?'+':''}${c}セント`}`, scoreLive:p=>`正確度 ${p}%`,
@@ -419,7 +419,7 @@ ja:{ male:'男性', female:'女性', voiceHint:'選ぶだけでその声種の�
 zh:{ male:'男声', female:'女声', voiceHint:'选好声部就会自动设置为该声部的平均音域。', manual:'手动调整音域(可选)',
   hMic:'音准反馈', micOn:'🎤 开启音准反馈', micOff:'🎤 关闭音准反馈',
   micHint:'戴耳机可以避免钢琴声混进麦克风,结果更准确。', noMelody:'没有耳机(旋律不发声,只在屏幕上提示)',
-  micListening:'麦克风已开启。开始练习并跟着唱吧。', micBlocked:'出于安全原因,此画面无法使用麦克风。请在桌面版 Curtain Up 中使用。',
+  micListening:'麦克风已开启。开始练习并跟着唱吧。', micBlocked:'出于安全原因,此画面无法使用麦克风。请直接用 Chrome 或 Safari 打开链接。',
   micDenied:'麦克风权限被拒绝。请在浏览器的网站设置中允许。', micNoSupport:'此浏览器不支持麦克风。',
   inTune:'很准', sharpS:'稍微偏高', flatS:'稍微偏低', sharp:'偏高', flat:'偏低', noVoice:'请发声', waiting:'等待下一个音',
   mLow:'低', mHigh:'高', myNote:(n,c)=>`你的音 ${n}${c===null?'':` · ${c>0?'+':''}${c} 音分`}`, scoreLive:p=>`准确度 ${p}%`,
@@ -428,7 +428,7 @@ zh:{ male:'男声', female:'女声', voiceHint:'选好声部就会自动设置�
 es:{ male:'Hombre', female:'Mujer', voiceHint:'Elige una y el registro se ajusta al promedio de esa voz.', manual:'Ajustar el registro a mano (opcional)',
   hMic:'Afinación en vivo', micOn:'🎤 Activar afinación', micOff:'🎤 Desactivar afinación',
   micHint:'Usa auriculares para que el piano no entre en el micrófono.', noMelody:'Sin auriculares (la melodía se muestra en pantalla, sin sonido)',
-  micListening:'Micrófono activo. Empieza a practicar y canta.', micBlocked:'Por seguridad, el micrófono está bloqueado en esta pantalla. Usa la app Curtain Up del escritorio.',
+  micListening:'Micrófono activo. Empieza a practicar y canta.', micBlocked:'Por seguridad, el micrófono está bloqueado en esta pantalla. Abre el enlace directamente en Chrome o Safari.',
   micDenied:'Se denegó el acceso al micrófono. Permítelo en los ajustes del sitio del navegador.', micNoSupport:'Este navegador no admite el micrófono.',
   inTune:'Afinado', sharpS:'Un poco alto', flatS:'Un poco bajo', sharp:'Alto', flat:'Bajo', noVoice:'Canta una nota', waiting:'Esperando la siguiente nota',
   mLow:'bajo', mHigh:'alto', myNote:(n,c)=>`Tú: ${n}${c===null?'':` · ${c>0?'+':''}${c} cents`}`, scoreLive:p=>`Precisión ${p}%`,
@@ -449,7 +449,9 @@ es:{ comboTitle:'Combinar ejercicios (hasta 3)', comboHint:'Toca ejercicios para
 };
 const SPEED_T = { ko:{ speedLbl:'빠르기 (드래그해서 조절)' }, en:{ speedLbl:'Speed (drag to adjust)' }, ja:{ speedLbl:'速さ(ドラッグで調整)' }, zh:{ speedLbl:'速度(拖动调整)' }, es:{ speedLbl:'Velocidad (arrastra para ajustar)' } };
 const VOICE_T = { ko:{ male:'남자', female:'여자' }, en:{ male:'Men', female:'Women' }, ja:{ male:'男性', female:'女性' }, zh:{ male:'男生', female:'女生' }, es:{ male:'Hombres', female:'Mujeres' } };
-Object.keys(EXTRA).forEach(l => Object.assign(T[l], EXTRA[l], COMBO[l], SPEED_T[l], VOICE_T[l]));
+const AWAY_T = { ko:{ micAway:'화면을 벗어나서 마이크를 껐어요. 다시 켜려면 위 버튼을 눌러 주세요.' }, en:{ micAway:'You left this screen, so the mic was turned off. Tap the button above to turn it back on.' }, ja:{ micAway:'画面を離れたのでマイクをオフにしました。上のボタンでもう一度オンにできます。' }, zh:{ micAway:'你离开了此画面,麦克风已关闭。点击上方按钮可重新开启。' }, es:{ micAway:'Saliste de la pantalla y se apagó el micrófono. Toca el botón de arriba para activarlo.' } };
+const SCORE_T = { ko:{ sungOf:(a,b)=>`(부른 키 ${a}/${b})` }, en:{ sungOf:(a,b)=>`(sang ${a} of ${b} keys)` }, ja:{ sungOf:(a,b)=>`(歌ったキー ${a}/${b})` }, zh:{ sungOf:(a,b)=>`(唱了 ${a}/${b} 个调)` }, es:{ sungOf:(a,b)=>`(cantaste ${a} de ${b} tonos)` } };
+Object.keys(EXTRA).forEach(l => Object.assign(T[l], EXTRA[l], COMBO[l], SPEED_T[l], VOICE_T[l], SCORE_T[l], AWAY_T[l]));
 /* note naming per language */
 const SCI = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const LAMP = {
@@ -502,10 +504,10 @@ const EXERCISES = [
   { id:'chrom', cat:'pitch', pat:[0,1,2,3,4,3,2,1,0], speed:1.15 },
 ];
 const ROUTINES = [
-  { id:'light', items:['three','siren','five'] },
-  { id:'audition', items:['three','siren','five','arp','stacc','nine'] },
-  { id:'high', items:['siren','arp','octjump','nine'] },
-  { id:'pitch', items:['three','chrom','minor','thirds'] },
+  { id:'light', items:['three','siren','five'], mins:5, ease:4 },
+  { id:'audition', items:['three','siren','five','arp','stacc','nine'], mins:10 },
+  { id:'high', items:['siren','arp','octjump','nine'], mins:7 },
+  { id:'pitch', items:['three','chrom','minor','thirds'], mins:8, ease:3 },
 ];
 const exName = e => !e ? '' : e.id.startsWith('my-') ? (e.id === 'my-draft' ? t().draft : e.name) : t().ex[e.id][0];
 const isMine = r => r.id.startsWith('mr-');
@@ -535,20 +537,31 @@ const exById = id => allEx().find(e => e.id === id);
 let tab = S.mode;
 
 /* ---------- plan ---------- */
+/* built-in routines have a target length (mins, at 1x) and may stay below the top note (ease, in semitones).
+   FIT = semitones between keys going [up, down]; the pair closest to the target wins. Chosen at 1x so changing speed keeps the same keys. */
+const FIT = [[1,1],[1,2],[1,3],[1,4],[1,6],[2,2],[2,3],[3,3]];
 function buildPlan(){
-  const list = S.mode === 'routine' ? (allRoutines().find(r => r.id === S.routine)?.items || []).map(exById) : [exById(S.ex)];
+  const r = S.mode === 'routine' ? allRoutines().find(x => x.id === S.routine) : null;
+  const list = S.mode === 'routine' ? (r?.items || []).map(exById) : [exById(S.ex)];
+  if (!r?.mins) return makePlan(list, [1,1], r?.ease || 0, S.speed);
+  const off = st => Math.abs((makePlan(list, st, r.ease || 0, 1).total || 0) - r.mins * 60);
+  return makePlan(list, FIT.reduce((a, b) => off(b) < off(a) ? b : a), r.ease || 0, S.speed);
+}
+function makePlan(list, [stepUp, stepDown], ease, speed){
   const ev = [], keys = [], segs = [], skipped = [];
-  let tt = 0.25;
+  let tt = 0.25, hi = 0;
   list.forEach(ex => {
     if (!ex) return;
-    const pat = ex.pat, maxRoot = S.top - Math.max(...pat);
-    if (maxRoot < S.low) { skipped.push(ex); return; }
+    const pat = ex.pat, fullRoot = S.top - Math.max(...pat);
+    if (fullRoot < S.low) { skipped.push(ex); return; }
+    const maxRoot = Math.max(S.low, fullRoot - ease);
     const roots = [];
-    for (let r = S.low; r <= maxRoot; r++) roots.push(r);
-    if (S.dir === 'both') for (let r = maxRoot - 1; r >= S.low; r--) roots.push(r);
+    for (let r = S.low; r <= maxRoot; r += stepUp) roots.push(r);
+    const peak = roots[roots.length - 1]; hi = Math.max(hi, peak + Math.max(...pat));
+    if (S.dir === 'both') for (let r = peak - stepDown; r >= S.low; r -= stepDown) roots.push(r);
     if (segs.length) tt += SEG_GAP;
     const seg = segs.push({ ex }) - 1;
-    const len = BASE_NOTE / S.speed * (ex.speed || 1);
+    const len = BASE_NOTE / speed * (ex.speed || 1);
     roots.forEach(r => {
       const k = keys.push({ t:tt, root:r, seg }) - 1;
       ev.push({ t:tt, k, seg, root:r, cue:true, notes:[r - 12, r, r + 4, r + 7], dur:0.9 });
@@ -570,7 +583,7 @@ function buildPlan(){
     });
   });
   if (!keys.length) return { empty:true, skipped };
-  return { ev, keys, segs, skipped, total: tt + 0.6 };
+  return { ev, keys, segs, skipped, hi, total: tt + 0.6 };
 }
 const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(Math.max(0, s) % 60)).padStart(2, '0');
 
@@ -580,6 +593,7 @@ let P = buildPlan(), state = 'idle', pos = 0;
 function ensureAudio(){
   if (ctx) return;
   ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ctx.onstatechange = () => { if (ctx.state !== 'running') pause(); }; // e.g. a phone call takes over the sound
   const amps = [0, 1, 0.55, 0.3, 0.17, 0.1, 0.06];
   wave = ctx.createPeriodicWave(new Float32Array(amps.length), new Float32Array(amps));
 }
@@ -627,7 +641,7 @@ function begin(from){
   timer = setInterval(schedule, 40); schedule();
   state = 'playing'; paint(); requestAnimationFrame(loop);
 }
-function play(){ if (state === 'playing') return; if (state !== 'paused') stats = {}; begin(state === 'paused' ? P.keys[keyAt(pos)].t : (state === 'done' ? 0 : pos)); }
+function play(){ if (state === 'playing') return; if (state !== 'paused') { stats = {}; note = null; } begin(state === 'paused' ? P.keys[keyAt(pos)].t : (state === 'done' ? 0 : pos)); }
 
 /* ---------- pitch feedback (microphone) ---------- */
 let mic = null, analyser = null, micBuf = null, micTimer = null, stats = {}, recent = [];
@@ -667,12 +681,23 @@ function targetNow(){
   if (state !== 'playing') return null;
   const p = ctx.currentTime - t0;
   let cur = null; for (const e of P.ev) { if (e.t <= p) cur = e; else break; }
-  if (!cur || cur.cue || p > cur.t + cur.dur + 0.05) return null;
+  if (!cur || cur.cue || p > cur.t + cur.dur + (cur.dur < 0.25 ? 0.15 : 0.05)) return null; // short notes get extra time for a late voice
   if (cur.glide) { const x = Math.min(1, (p - cur.t) / cur.dur) * (cur.glide.length - 1), j = Math.min(cur.glide.length - 2, Math.floor(x)); return { m: cur.glide[j] + (cur.glide[j + 1] - cur.glide[j]) * (x - j), k: cur.k, e: cur }; }
   return { m: cur.notes[0], k: cur.k, e: cur };
 }
 const noteLabel = m => L === 'ko' ? korOct(m) : sci(m);
 /* smoothing: average the error over ~0.3 s (rides out vibrato), hold through short gaps, debounce the verdict */
+/* score per note, not per moment of sound: a note you skip counts as missed. A key sung with no sound at all is treated as a rest. */
+let note = null;
+function closeNote(){
+  const n = note; note = null;
+  if (!n || n.first > 0.25 || n.last < n.e.dur * 0.6) return; // paused, seeked or mic turned on midway: don't judge
+  if (!n.n && n.ticks < 4) return;                            // too fast to hear reliably
+  const s = stats[n.e.k] || (stats[n.e.k] = { hit:0, n:0, sung:0 });
+  s.n++; if (n.n) s.sung++;
+  s.hit += n.n ? Math.min(1, n.hit / Math.max(n.n, Math.ceil(n.ticks * 0.4))) : 0;
+}
+const sungKeys = () => Object.entries(stats).filter(([, s]) => s.sung);
 let errBuf = [], errEv = null, smC = null, gap = 0, shownCls = null, candCls = null, candN = 0;
 function micTick(){
   analyser.getFloatTimeDomainData(micBuf);
@@ -683,6 +708,12 @@ function micTick(){
   const m = voiced.length >= 2 ? [...voiced].sort((x, y) => x - y)[Math.floor(voiced.length / 2)] : null;
   const tg = targetNow(), needle = $('needle'), vd = $('verdict');
   if (!tg || tg.e !== errEv) { errBuf = []; errEv = tg ? tg.e : null; if (!tg) smC = null; }
+  if (note && (!tg || tg.e !== note.e)) closeNote();
+  if (tg) {
+    const at = ctx.currentTime - t0 - tg.e.t;
+    if (!note) note = { e:tg.e, first:at, last:at, ticks:0, n:0, hit:0 };
+    note.ticks++; note.last = at;
+  }
   if (raw !== null && tg) {
     let d = raw - tg.m; d -= 12 * Math.round(d / 12);
     errBuf.push(d * 100); if (errBuf.length > 6) errBuf.shift();
@@ -701,7 +732,7 @@ function micTick(){
     cls = shownCls === 'good' ? 'good' : shownCls.slice(0, -1);
     text = { good:t().inTune, warnH:t().sharpS, warnL:t().flatS, offH:t().sharp, offL:t().flat }[shownCls];
     needle.style.left = (50 + Math.max(-50, Math.min(50, smC))) + '%';
-    if (raw !== null) { const s = stats[tg.k] || (stats[tg.k] = { hit:0, n:0 }); s.n++; if (a <= 35) s.hit++; }
+    if (raw !== null) { note.n++; if (a <= 35) note.hit++; }
     $('myNote').textContent = t().myNote(noteLabel(Math.round(m ?? tg.m + smC / 100)), cents);
   } else if (tg && smC !== null && gap <= 6) {
     return; // between notes or a brief gap: keep the needle where it is
@@ -711,18 +742,18 @@ function micTick(){
     $('myNote').textContent = m !== null ? t().myNote(noteLabel(Math.round(m)), null) : '';
   }
   needle.className = 'needle ' + cls; vd.className = 'verdict ' + cls; vd.textContent = text;
-  const tot = Object.values(stats).reduce((acc, s) => (acc.h += s.hit, acc.n += s.n, acc), { h:0, n:0 });
-  $('score').textContent = tot.n > 10 ? t().scoreLive(Math.round(tot.h / tot.n * 100)) : '';
+  const tot = sungKeys().reduce((acc, [, s]) => (acc.h += s.hit, acc.n += s.n, acc), { h:0, n:0 });
+  $('score').textContent = tot.n > 3 ? t().scoreLive(Math.round(tot.h / tot.n * 100)) : '';
 }
 function scoreSummary(){
-  const entries = Object.entries(stats).filter(([, s]) => s.n >= 6);
+  const entries = sungKeys();
   const tot = entries.reduce((acc, [, s]) => (acc.h += s.hit, acc.n += s.n, acc), { h:0, n:0 });
-  if (!mic || tot.n < 20) return null;
+  if (!mic || tot.n < 4) return null;
   const rate = ([, s]) => s.hit / s.n;
   entries.sort((x, y) => rate(y) - rate(x));
   const name = k => noteLabel(P.keys[+k].root);
   const best = entries[0], worst = entries[entries.length - 1];
-  return t().doneScore(Math.round(tot.h / tot.n * 100), name(best[0]), entries.length > 1 && rate(worst) < 0.7 ? name(worst[0]) : '');
+  return t().doneScore(Math.round(tot.h / tot.n * 100), name(best[0]), entries.length > 1 && rate(worst) < 0.7 ? name(worst[0]) : '') + ' ' + t().sungOf(entries.length, P.keys.length);
 }
 function micMessage(key, err){ const el = $('micMsg'); el.dataset.key = key; el.textContent = t()[key]; el.classList.toggle('err', !!err); }
 async function micOn(){
@@ -757,6 +788,20 @@ function seekKey(k){
   pos = P.keys[k].t;
   if (state === 'playing') begin(pos); else { state = 'paused'; paint(); }
 }
+
+/* ---------- screen & leaving the app ---------- */
+let wake = null, wakeAsk = false; // keep the screen on while practicing
+async function wakeOn(){
+  if (wake || wakeAsk || !navigator.wakeLock) return;
+  wakeAsk = true;
+  try { const w = await navigator.wakeLock.request('screen'); wake = w; w.addEventListener('release', () => { if (wake === w) wake = null; }); } catch(e) {}
+  wakeAsk = false;
+  if (state !== 'playing') wakeOff();
+}
+function wakeOff(){ const w = wake; wake = null; if (w) w.release().catch(() => {}); }
+function leave(){ pause(); if (mic) { micOff(); micMessage('micAway'); } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) leave(); });
+window.addEventListener('pagehide', leave);
 
 /* ---------- stage drawing ---------- */
 let lampSig = '';
@@ -799,6 +844,7 @@ function loop(){
   requestAnimationFrame(loop);
 }
 function paint(){
+  state === 'playing' ? wakeOn() : wakeOff();
   const st = $('stage');
   st.classList.toggle('playing', state === 'playing');
   st.classList.toggle('paused', state === 'paused');
@@ -893,7 +939,7 @@ function renderControls(){
   const sk = P.skipped || [];
   $('warn').hidden = !sk.length && !P.empty;
   $('warn').textContent = P.empty ? t().warnNarrow : sk.length ? t().warnSkipped(sk.map(exName).join(', ')) : '';
-  $('summary').textContent = P.empty ? '' : t().summary(keyBig(S.low), keyBig(S.top), P.keys.length, fmt(P.total));
+  $('summary').textContent = P.empty ? '' : t().summary(keyBig(S.low), keyBig(P.hi), P.keys.length, fmt(P.total));
 }
 function change(fn){ fn(); persist(); toIdle(); renderControls(); }
 
@@ -990,7 +1036,7 @@ function previewSpeed(x){
   const keep = S.speed; S.speed = x; const pl = buildPlan(); S.speed = keep;
   $('speedVal').textContent = fmtSpeed(x);
   document.querySelectorAll('#speedTicks button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === x));
-  $('summary').textContent = pl.empty ? '' : t().summary(keyBig(S.low), keyBig(S.top), pl.keys.length, fmt(pl.total));
+  $('summary').textContent = pl.empty ? '' : t().summary(keyBig(S.low), keyBig(pl.hi), pl.keys.length, fmt(pl.total));
 }
 function applySpeed(x){
   x = clampSpeed(x); if (x === S.speed) { showSpeed(x); return; }
