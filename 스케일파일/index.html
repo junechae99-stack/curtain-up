@@ -50,14 +50,19 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .live{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .live i{width:7px;height:7px;border-radius:50%;background:var(--stage-dim)}
 .stage.playing .live i{background:var(--stage-lamp);box-shadow:0 0 10px var(--stage-lamp)}
-.key{display:grid;gap:2px;text-align:center}
-.key .k{font:800 54px/1 var(--display);letter-spacing:-1.5px}
+.key{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;text-align:center}
+.key.one{grid-template-columns:1fr}
+.key>div{display:grid;gap:4px;align-content:start}
+.key .kl{font-size:12px;color:var(--stage-muted)}
+.key .k{font:800 clamp(28px,9.2vw,40px)/1.05 var(--display);letter-spacing:-1px;white-space:nowrap}
+.key .peak .k{color:var(--stage-lamp)}
 .key .sci{font:500 13px var(--display);color:var(--stage-muted);letter-spacing:.08em}
 .cue{text-align:center;font-size:14px;color:var(--stage-muted);min-height:22px}
 .stage.paused .cue{color:var(--stage-lamp);font-weight:500}
 .lamps{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
 .lamp{min-width:36px;padding:7px 5px 5px;border-radius:11px;border:1px solid var(--stage-dim);text-align:center;display:grid;gap:1px;transition:background .12s,border-color .12s,transform .12s}
 .lamp b{font:700 15px var(--body)}
+.lamp.hi{border-color:var(--stage-lamp)}
 .lamp small{font:500 10px var(--display);color:var(--stage-muted);letter-spacing:.03em}
 .lamp.on{background:var(--stage-lamp);border-color:var(--stage-lamp);color:#2a1a05;transform:translateY(-3px)}
 .lamp.on small{color:#5a4014}
@@ -196,7 +201,7 @@ details.manual .range .step{background:var(--bg)}
 
   <div class="stage" id="stage" role="button" tabindex="0">
     <div class="stage-top"><span class="live"><i></i><span id="liveText"></span></span><span id="exName"></span></div>
-    <div class="key"><span class="k" id="keyK"></span><span class="sci" id="keySci"></span></div>
+    <div class="key" id="keyBox"><div><span class="kl" data-t="keyStart"></span><span class="k" id="keyK"></span><span class="sci" id="keySci"></span></div><div class="peak" id="peakBox"><span class="kl" data-t="keyPeak"></span><span class="k" id="peakK"></span><span class="sci" id="peakSci"></span></div></div>
     <div class="lamps" id="lamps"></div>
     <div class="meter" id="meter" hidden>
       <div class="meter-bar"><span class="needle" id="needle"></span></div>
@@ -452,7 +457,7 @@ es:{ comboTitle:'Combinar ejercicios (hasta 3)', comboHint:'Toca ejercicios para
 };
 const SPEED_T = { ko:{ speedLbl:'빠르기 (드래그해서 조절)' }, en:{ speedLbl:'Speed (drag to adjust)' }, ja:{ speedLbl:'速さ(ドラッグで調整)' }, zh:{ speedLbl:'速度(拖动调整)' }, es:{ speedLbl:'Velocidad (arrastra para ajustar)' } };
 const VOICE_T = { ko:{ male:'남자', female:'여자' }, en:{ male:'Men', female:'Women' }, ja:{ male:'男性', female:'女性' }, zh:{ male:'男生', female:'女生' }, es:{ male:'Hombres', female:'Mujeres' } };
-const AWAY_T = { ko:{ micVol:'마이크 켰을 때 피아노 소리', audioStuck:'소리가 멈췄어요. 재생을 한 번 더 눌러 주세요', micAway:'화면을 벗어나서 마이크를 껐어요. 다시 켜려면 위 버튼을 눌러 주세요.' }, en:{ micVol:'Piano volume while the mic is on', audioStuck:'The sound stopped. Tap play once more', micAway:'You left this screen, so the mic was turned off. Tap the button above to turn it back on.' }, ja:{ micVol:'マイク使用中のピアノ音量', audioStuck:'音が止まりました。もう一度再生を押してください', micAway:'画面を離れたのでマイクをオフにしました。上のボタンでもう一度オンにできます。' }, zh:{ micVol:'麦克风开启时的钢琴音量', audioStuck:'声音停止了，请再按一次播放', micAway:'你离开了此画面,麦克风已关闭。点击上方按钮可重新开启。' }, es:{ micVol:'Volumen del piano con micrófono', audioStuck:'El sonido se detuvo. Toca reproducir otra vez', micAway:'Saliste de la pantalla y se apagó el micrófono. Toca el botón de arriba para activarlo.' } };
+const AWAY_T = { ko:{ keyStart:'시작 음', keyPeak:'가장 높은 음', micVol:'마이크 켰을 때 피아노 소리', audioStuck:'소리가 멈췄어요. 재생을 한 번 더 눌러 주세요', micAway:'화면을 벗어나서 마이크를 껐어요. 다시 켜려면 위 버튼을 눌러 주세요.' }, en:{ keyStart:'Start', keyPeak:'Highest', micVol:'Piano volume while the mic is on', audioStuck:'The sound stopped. Tap play once more', micAway:'You left this screen, so the mic was turned off. Tap the button above to turn it back on.' }, ja:{ keyStart:'始まりの音', keyPeak:'最高音', micVol:'マイク使用中のピアノ音量', audioStuck:'音が止まりました。もう一度再生を押してください', micAway:'画面を離れたのでマイクをオフにしました。上のボタンでもう一度オンにできます。' }, zh:{ keyStart:'起始音', keyPeak:'最高音', micVol:'麦克风开启时的钢琴音量', audioStuck:'声音停止了，请再按一次播放', micAway:'你离开了此画面,麦克风已关闭。点击上方按钮可重新开启。' }, es:{ keyStart:'Inicio', keyPeak:'Más alta', micVol:'Volumen del piano con micrófono', audioStuck:'El sonido se detuvo. Toca reproducir otra vez', micAway:'Saliste de la pantalla y se apagó el micrófono. Toca el botón de arriba para activarlo.' } };
 const SCORE_T = { ko:{ octLow:'한 옥타브 낮아요', octHigh:'한 옥타브 높아요', octKeys:n=>`옥타브가 다르게 부른 키가 ${n}개 있어요.`, sungOf:(a,b)=>`(부른 키 ${a}/${b})` }, en:{ octLow:'An octave low', octHigh:'An octave high', octKeys:n=>`${n} keys were sung in a different octave.`, sungOf:(a,b)=>`(sang ${a} of ${b} keys)` }, ja:{ octLow:'1オクターブ低いです', octHigh:'1オクターブ高いです', octKeys:n=>`オクターブ違いで歌ったキーが${n}個あります。`, sungOf:(a,b)=>`(歌ったキー ${a}/${b})` }, zh:{ octLow:'低了一个八度', octHigh:'高了一个八度', octKeys:n=>`有 ${n} 个调唱成了别的八度。`, sungOf:(a,b)=>`(唱了 ${a}/${b} 个调)` }, es:{ octLow:'Una octava abajo', octHigh:'Una octava arriba', octKeys:n=>`Cantaste ${n} tonos en otra octava.`, sungOf:(a,b)=>`(cantaste ${a} de ${b} tonos)` } };
 Object.keys(EXTRA).forEach(l => Object.assign(T[l], EXTRA[l], COMBO[l], SPEED_T[l], VOICE_T[l], SCORE_T[l], AWAY_T[l]));
 /* note naming per language */
@@ -905,15 +910,18 @@ window.addEventListener('pagehide', leave);
 /* ---------- stage drawing ---------- */
 let lampSig = '';
 function renderLamps(seg, root){
-  const sig = L + seg + ':' + root; if (sig === lampSig) return; lampSig = sig;
-  const pat = P.segs[seg].ex.pat;
-  $('lamps').innerHTML = pat.map(iv => `<span class="lamp"><b>${LAMP[L][(root + iv) % 12]}</b><small>${sci(root + iv)}</small></span>`).join('');
+  const sig = L + seg + ':' + root + ':' + P.segs[seg].ex.pat.join(); if (sig === lampSig) return; lampSig = sig;
+  const pat = P.segs[seg].ex.pat, hi = Math.max(...pat);
+  $('lamps').innerHTML = pat.map(iv => `<span class="lamp${iv === hi && hi > Math.min(...pat) ? ' hi' : ''}"><b>${LAMP[L][(root + iv) % 12]}</b><small>${sci(root + iv)}</small></span>`).join('');
 }
 function showAt(p, live){
   if (P.empty) return;
   const k = keyAt(p), key = P.keys[k], seg = P.segs[key.seg];
   $('keyK').textContent = keyBig(key.root);
-  $('keySci').textContent = 'KEY' + (keySmall(key.root) ? ' · ' + keySmall(key.root) : '');
+  $('keySci').textContent = keySmall(key.root);
+  const peak = key.root + Math.max(...seg.ex.pat);
+  $('peakBox').hidden = peak === key.root; $('keyBox').classList.toggle('one', peak === key.root);
+  $('peakK').textContent = keyBig(peak); $('peakSci').textContent = keySmall(peak);
   $('exName').textContent = (P.segs.length > 1 ? `${key.seg + 1}/${P.segs.length} · ` : '') + exName(seg.ex);
   renderLamps(key.seg, key.root);
   let on = -1, cueNow = false;
@@ -952,7 +960,7 @@ function paint(){
   $('playBtn').textContent = state === 'playing' ? t().pause : state === 'paused' ? t().resume : state === 'done' ? t().again : t().start;
   $('playBtn').disabled = !!P.empty;
   if (P.empty) {
-    $('keyK').textContent = '—'; $('keySci').textContent = ''; $('lamps').innerHTML = ''; lampSig = '';
+    $('keyK').textContent = '—'; $('keySci').textContent = ''; $('peakBox').hidden = true; $('keyBox').classList.add('one'); $('lamps').innerHTML = ''; lampSig = '';
     $('exName').textContent = ''; $('cue').textContent = t().cueEmpty;
     $('trackPos').textContent = t().keysNone; $('trackTime').textContent = '0:00';
     return;
