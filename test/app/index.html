@@ -450,7 +450,7 @@ es:{ comboTitle:'Combinar ejercicios (hasta 3)', comboHint:'Toca ejercicios para
 };
 const SPEED_T = { ko:{ speedLbl:'빠르기 (드래그해서 조절)' }, en:{ speedLbl:'Speed (drag to adjust)' }, ja:{ speedLbl:'速さ(ドラッグで調整)' }, zh:{ speedLbl:'速度(拖动调整)' }, es:{ speedLbl:'Velocidad (arrastra para ajustar)' } };
 const VOICE_T = { ko:{ male:'남자', female:'여자' }, en:{ male:'Men', female:'Women' }, ja:{ male:'男性', female:'女性' }, zh:{ male:'男生', female:'女生' }, es:{ male:'Hombres', female:'Mujeres' } };
-const AWAY_T = { ko:{ micAway:'화면을 벗어나서 마이크를 껐어요. 다시 켜려면 위 버튼을 눌러 주세요.' }, en:{ micAway:'You left this screen, so the mic was turned off. Tap the button above to turn it back on.' }, ja:{ micAway:'画面を離れたのでマイクをオフにしました。上のボタンでもう一度オンにできます。' }, zh:{ micAway:'你离开了此画面,麦克风已关闭。点击上方按钮可重新开启。' }, es:{ micAway:'Saliste de la pantalla y se apagó el micrófono. Toca el botón de arriba para activarlo.' } };
+const AWAY_T = { ko:{ audioStuck:'소리가 멈췄어요. 재생을 한 번 더 눌러 주세요', micAway:'화면을 벗어나서 마이크를 껐어요. 다시 켜려면 위 버튼을 눌러 주세요.' }, en:{ audioStuck:'The sound stopped. Tap play once more', micAway:'You left this screen, so the mic was turned off. Tap the button above to turn it back on.' }, ja:{ audioStuck:'音が止まりました。もう一度再生を押してください', micAway:'画面を離れたのでマイクをオフにしました。上のボタンでもう一度オンにできます。' }, zh:{ audioStuck:'声音停止了，请再按一次播放', micAway:'你离开了此画面,麦克风已关闭。点击上方按钮可重新开启。' }, es:{ audioStuck:'El sonido se detuvo. Toca reproducir otra vez', micAway:'Saliste de la pantalla y se apagó el micrófono. Toca el botón de arriba para activarlo.' } };
 const SCORE_T = { ko:{ sungOf:(a,b)=>`(부른 키 ${a}/${b})` }, en:{ sungOf:(a,b)=>`(sang ${a} of ${b} keys)` }, ja:{ sungOf:(a,b)=>`(歌ったキー ${a}/${b})` }, zh:{ sungOf:(a,b)=>`(唱了 ${a}/${b} 个调)` }, es:{ sungOf:(a,b)=>`(cantaste ${a} de ${b} tonos)` } };
 Object.keys(EXTRA).forEach(l => Object.assign(T[l], EXTRA[l], COMBO[l], SPEED_T[l], VOICE_T[l], SCORE_T[l], AWAY_T[l]));
 /* note naming per language */
@@ -591,10 +591,17 @@ const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(Math.max(0, s) % 6
 /* ---------- audio ---------- */
 let ctx = null, wave = null, master = null, timer = null, t0 = 0, nextIdx = 0;
 let P = buildPlan(), state = 'idle', pos = 0;
+let stale = false; // the phone slept or we left the app: iPhone can leave the old sound engine frozen for good, so start a new one on the next tap
 function ensureAudio(){
+  if (ctx && (stale || ctx.state === 'interrupted' || ctx.state === 'closed')) {
+    const old = ctx; old.onstatechange = null; ctx = null; master = null;
+    try { old.close().catch(() => {}); } catch (e) {}
+  }
+  stale = false;
   if (ctx) return;
-  ctx = new (window.AudioContext || window.webkitAudioContext)();
-  ctx.onstatechange = () => { if (ctx.state !== 'running') pause(); }; // e.g. a phone call takes over the sound
+  const c = ctx = new (window.AudioContext || window.webkitAudioContext)();
+  c.onstatechange = () => { if (c === ctx && c.state !== 'running') pause(); }; // e.g. a phone call takes over the sound
+  if (mic) { if (mic.getTracks().some(tr => tr.readyState === 'ended')) micOff(); else listenTo(mic); }
   const amps = [0, 1, 0.55, 0.3, 0.17, 0.1, 0.06];
   wave = ctx.createPeriodicWave(new Float32Array(amps.length), new Float32Array(amps));
 }
@@ -635,12 +642,23 @@ function silence(){
 function keyAt(p){ let k = 0; P.keys.forEach((kk, i) => { if (kk.t <= p + 0.01) k = i; }); return k; }
 function begin(from){
   if (P.empty) return;
-  ensureAudio(); ctx.resume(); silence();
+  silence(); ensureAudio(); ctx.resume();
   master = ctx.createGain(); master.gain.value = 0.22; master.connect(ctx.destination);
   t0 = ctx.currentTime + 0.08 - from;
   nextIdx = P.ev.findIndex(e => e.t >= from - 0.001); if (nextIdx < 0) nextIdx = P.ev.length;
   timer = setInterval(schedule, 40); schedule();
-  state = 'playing'; paint(); requestAnimationFrame(loop);
+  state = 'playing'; paint(); requestAnimationFrame(loop); watch();
+}
+/* if the sound clock stops while we are playing, pause and say so instead of freezing */
+let watchTimer = null;
+function watch(){
+  clearInterval(watchTimer);
+  let last = ctx.currentTime, still = 0;
+  watchTimer = setInterval(() => {
+    if (state !== 'playing') { clearInterval(watchTimer); return; }
+    still = ctx.currentTime > last + 0.05 ? 0 : still + 1; last = ctx.currentTime;
+    if (still >= 2) { pause(); stale = true; $('cue').textContent = t().audioStuck; }
+  }, 1000);
 }
 function play(){ if (state === 'playing') return; if (state !== 'paused') { stats = {}; } hist = []; keyDone = -1; begin(state === 'paused' ? P.keys[keyAt(pos)].t : (state === 'done' ? 0 : pos)); }
 
@@ -791,6 +809,10 @@ function scoreSummary(){
   return t().doneScore(Math.round(tot.h / tot.n * 100), name(best[0]), entries.length > 1 && rate(worst) < 0.7 ? name(worst[0]) : '') + ' ' + t().sungOf(entries.length, P.keys.length);
 }
 function micMessage(key, err){ const el = $('micMsg'); el.dataset.key = key; el.textContent = t()[key]; el.classList.toggle('err', !!err); }
+function listenTo(stream){
+  analyser = ctx.createAnalyser(); analyser.fftSize = 2048; micBuf = new Float32Array(analyser.fftSize);
+  ctx.createMediaStreamSource(stream).connect(analyser);
+}
 async function micOn(){
   if (!navigator.mediaDevices?.getUserMedia) { micMessage('micNoSupport', true); return; }
   ensureAudio(); ctx.resume();
@@ -800,8 +822,8 @@ async function micOn(){
     const blocked = document.permissionsPolicy?.allowsFeature?.('microphone') === false || document.featurePolicy?.allowsFeature?.('microphone') === false || e.name === 'SecurityError';
     micMessage(blocked || e.name !== 'NotAllowedError' ? 'micBlocked' : 'micDenied', true); mic = null; return;
   }
-  analyser = ctx.createAnalyser(); analyser.fftSize = 2048; micBuf = new Float32Array(analyser.fftSize);
-  ctx.createMediaStreamSource(mic).connect(analyser);
+  ensureAudio(); ctx.resume(); // the permission prompt may have interrupted the sound
+  listenTo(mic);
   micTimer = setInterval(micTick, 50);
   $('meter').hidden = false; micMessage('micListening'); renderMic();
 }
@@ -816,7 +838,7 @@ function renderMic(){
   $('noMelody').checked = !!S.noMelody;
   const el = $('micMsg'); el.textContent = t()[el.dataset.key || 'micHint'];
 }
-function pause(){ if (state !== 'playing') return; pos = ctx.currentTime - t0; silence(); state = 'paused'; paint(); }
+function pause(){ if (state !== 'playing') return; pos = Math.max(0, ctx.currentTime - t0); silence(); state = 'paused'; paint(); }
 function toIdle(){ silence(); P = buildPlan(); state = 'idle'; pos = 0; paint(); }
 function seekKey(k){
   if (P.empty) return;
@@ -834,7 +856,7 @@ async function wakeOn(){
   if (state !== 'playing') wakeOff();
 }
 function wakeOff(){ const w = wake; wake = null; if (w) w.release().catch(() => {}); }
-function leave(){ pause(); if (mic) { micOff(); micMessage('micAway'); } }
+function leave(){ pause(); stale = true; if (mic) { micOff(); micMessage('micAway'); } }
 document.addEventListener('visibilitychange', () => { if (document.hidden) leave(); });
 window.addEventListener('pagehide', leave);
 

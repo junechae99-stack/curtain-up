@@ -124,7 +124,8 @@ function heard(txt, off){ $('heard').textContent = txt; $('heard').className = '
 function fill(p){ $('fill').style.width = Math.round(p * 100) + '%'; }
 async function openMic(){
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { heard('이 브라우저에서는 마이크를 쓸 수 없어요. 크롬이나 사파리에서 열어 주세요.', true); return false; }
-  if (!ctx) {
+  if (ctx) { try { ctx.close().catch(() => {}); } catch (e) {} ctx = null; osc = null; } // after the phone slept the old sound engine can stay frozen
+  {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     const amps = [0, 1, 0.55, 0.3, 0.17, 0.1, 0.06];
     wave = ctx.createPeriodicWave(new Float32Array(amps.length), new Float32Array(amps));
