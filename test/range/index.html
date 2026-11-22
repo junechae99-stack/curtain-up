@@ -1,0 +1,240 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>음역 찾기 테스트</title>
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#f6f1f3;--surface:#fff;--ink:#2a1520;--muted:#7a6470;--line:#e7dce1;--accent:#8c1d40;--accent-ink:#fff;--stage-bg:#22111a;--stage-ink:#f6ecf0;--stage-muted:#b69fab;--lamp:#f1c76b;--dim:#4a3440;--good:#6fdc9c;--off:#ff8fa3;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#140b10;--surface:#1e1318;--ink:#f3e9ee;--muted:#b39fa9;--line:#352630;--accent:#e0607f;--accent-ink:#22060f;--stage-bg:#0b0609;--dim:#3a2832;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;word-break:keep-all;padding:20px max(16px,env(safe-area-inset-left)) 60px}
+.app{max-width:480px;margin:0 auto;display:grid;gap:18px}
+h1{font-size:24px;margin:0;line-height:1.2}h2{font-size:17px;margin:0}
+p{margin:0}.muted{color:var(--muted);font-size:14px}
+.stage{background:var(--stage-bg);color:var(--stage-ink);border-radius:22px;padding:24px 20px;display:grid;gap:14px;text-align:center}
+.step{font-size:13px;color:var(--stage-muted)}
+.big{font-weight:800;font-size:46px;line-height:1.1}.sci{color:var(--stage-muted);font-size:14px;min-height:22px}
+.cue{font-size:16px;font-weight:500;color:var(--lamp);min-height:26px}
+.bar{height:10px;border-radius:99px;background:var(--dim);overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--good)}
+.heard{font-size:13px;color:var(--stage-muted);min-height:20px}.heard.off{color:var(--off)}
+.btns{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.btns .wide{grid-column:1/-1}
+button,select,textarea{font:inherit;color:inherit}
+button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:13px;font-weight:500;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px}
+.row{display:flex;justify-content:space-between;gap:12px}.row b{text-align:right}
+select{width:100%;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+textarea{width:100%;height:150px;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:10px;font:12px/1.5 ui-monospace,Consolas,monospace}
+[hidden]{display:none!important}
+</style></head><body><div class="app">
+<div><h1>음역 찾기 테스트</h1><p class="muted">음역 찾기가 얼마나 맞는지 보는 시험용이에요. 소리는 녹음하거나 보내지 않아요.</p></div>
+<div class="stage" aria-live="polite"><div class="step" id="step"></div><div class="big" id="big"></div><div class="sci" id="sci"></div><div class="cue" id="cue"></div><div class="bar" id="bar"><i id="fill"></i></div><div class="heard" id="heard"></div></div>
+<div class="btns" id="btns"></div>
+<div class="card" id="result" hidden></div>
+<div class="card" id="check" hidden>
+  <h2>실제 음역과 비교</h2><p class="muted">피아노로 미리 재 둔, <b>편하게 낼 수 있는</b> 가장 낮은 음과 높은 음을 골라 주세요.</p>
+  <label>실제 최저음<select id="tLow"></select></label><label>실제 최고음<select id="tTop"></select></label>
+  <p id="diff"></p>
+</div>
+<div class="card" id="logBox" hidden><h2>기록</h2><textarea id="log" readonly aria-label="측정 기록"></textarea><button id="copy">기록 복사하기</button></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const SCI = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'], KO = ['도','도#','레','레#','미','파','파#','솔','솔#','라','라#','시'];
+const sci = m => SCI[m % 12] + (Math.floor(m / 12) - 1);
+const ko = m => { const o = Math.floor(m / 12) - 3; return (o >= 1 ? o + '옥 ' : '저음 ') + KO[m % 12]; };
+const nm = m => ko(m) + ' (' + sci(m) + ')';
+const VOICES = [['테너',48,72],['바리톤',45,69],['베이스',41,64],['소프라노',60,84],['메조소프라노',57,81],['알토',53,77]];
+/* ---- copied from the app (same detector, same piano sound) ---- */
+let noiseFloor = 0.001;
+/* McLeod pitch method: normalized, so it works at low volume (singer farther from the phone) */
+function detectPitch(buf, sr){
+  const n = buf.length;
+  let rms = 0; for (let i = 0; i < n; i++) rms += buf[i] * buf[i]; rms = Math.sqrt(rms / n);
+  // adaptive gate: follow the room's quiet level, accept anything clearly above it
+  noiseFloor = rms < noiseFloor ? noiseFloor * 0.8 + rms * 0.2 : Math.min(0.004, noiseFloor * 1.002); // drops fast in quiet gaps, creeps up only slowly
+  if (rms < Math.max(0.001, noiseFloor * 2)) return null;
+  const maxLag = Math.min(n >> 1, Math.floor(sr / 65)), minLag = Math.floor(sr / 1200);
+  const nsdf = new Float32Array(maxLag + 2);
+  for (let lag = 0; lag <= maxLag + 1; lag++) {
+    let r = 0, m = 0;
+    for (let j = 0; j < n - lag; j++) { const a = buf[j], b = buf[j + lag]; r += a * b; m += a * a + b * b; }
+    nsdf[lag] = m > 0 ? 2 * r / m : 0;
+  }
+  // collect the highest point of each positive lobe
+  const peaks = []; let lag = 1;
+  while (lag < maxLag && nsdf[lag] > 0) lag++;
+  while (lag < maxLag) {
+    while (lag < maxLag && nsdf[lag] <= 0) lag++;
+    let bi = -1, bv = -1;
+    while (lag < maxLag && nsdf[lag] > 0) { if (nsdf[lag] > bv && nsdf[lag] >= nsdf[lag - 1] && nsdf[lag] >= nsdf[lag + 1]) { bv = nsdf[lag]; bi = lag; } lag++; }
+    if (bi >= minLag) peaks.push(bi);
+  }
+  if (!peaks.length) return null;
+  const top = Math.max(...peaks.map(i => nsdf[i]));
+  if (top < 0.6) return null; // not a clear tone (noise, breath, consonant)
+  const bi = peaks.find(i => nsdf[i] >= top * 0.88);
+  const a = (nsdf[bi - 1] + nsdf[bi + 1] - 2 * nsdf[bi]) / 2, b = (nsdf[bi + 1] - nsdf[bi - 1]) / 2;
+  const T0 = a ? bi - b / (2 * a) : bi;
+  const f = sr / T0; return f >= 65 && f <= 1200 ? f : null;
+}
+function voiceNode(f, at, dur, vel, sustain){
+  const o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+  o.setPeriodicWave(wave); o.frequency.setValueAtTime(f, at);
+  lp.type = 'lowpass'; lp.frequency.setValueAtTime(Math.min(f * 7, 12000), at); lp.frequency.exponentialRampToValueAtTime(Math.max(f * 2.2, 500), at + dur);
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(vel, at + 0.006);
+  g.gain.exponentialRampToValueAtTime(vel * sustain, at + Math.min(dur, 0.6));
+  g.gain.setValueAtTime(vel * sustain, at + dur);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur + 0.25);
+  o.connect(lp).connect(g).connect(master);
+  o.start(at); o.stop(at + dur + 0.3);
+  return o;
+}
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+
+/* ---- hold check: accept only a steady voice near the expected note ---- */
+const HOLD = 0.6, TICK = 0.05, TOL = 0.5, STEADY = 0.7, NEED = 0.8;   // starting values, tune with real voices
+const LO = 37, HI = 85;                                                // the detector hears C#2 to C#6
+const median = a => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
+/* frames: [{t, m|null}]; returns {ok, m, prog}. expected=null: any note. */
+function holdCheck(frames, expected){
+  const now = frames.length ? frames[frames.length - 1].t : 0;
+  const w = frames.filter(f => f.t > now - HOLD - 0.001), v = w.filter(f => f.m !== null).map(f => f.m);
+  if (v.length < 3) return { ok:false, m:null, prog:0 };
+  const med = median(v), near = v.filter(x => Math.abs(x - med) <= STEADY).length;
+  const onNote = expected === null || Math.abs(med - expected) <= TOL;
+  const full = HOLD / TICK, prog = onNote ? Math.min(1, near / (full * NEED)) : 0;
+  const span = now - w[0].t >= HOLD - 2.5 * TICK && near >= w.length * NEED && near >= full * NEED;
+  return { ok: onNote && span, m: med, prog };
+}
+function recommend(low, top){
+  const r = { low: low + 1, top: top - 2 };
+  if (r.top - r.low < 5) return { ...r, narrow: true, voices: [] };
+  const d = VOICES.map(v => [v[0], Math.abs(v[1] - r.low) + Math.abs(v[2] - r.top)]).sort((a, b) => a[1] - b[1]);
+  return { ...r, voices: d.filter(x => x[1] - d[0][1] <= 2).slice(0, 2).map(x => x[0]) };
+}
+/* ---- flow ---- */
+let ctx = null, wave = null, master = null, mic = null, analyser = null, buf = null, timer = null;
+let phase = 'intro', frames = [], listenAt = 0, until = 0, comfy = null, dir = -1, cur = null, best = { low:null, top:null }, log = [], tries = 0, octLow = 0;
+const note = s => { log.push(s); $('log').value = log.join('\n'); };
+function say(step, m, cue){ $('step').textContent = step; $('big').textContent = m === null ? '아~' : ko(m); $('sci').textContent = m === null ? '' : sci(m); $('cue').textContent = cue; }
+function buttons(list){ $('btns').innerHTML = ''; list.forEach(([txt, fn, cls]) => { const b = document.createElement('button'); b.textContent = txt; b.className = cls || ''; b.onclick = fn; $('btns').append(b); }); }
+function heard(txt, off){ $('heard').textContent = txt; $('heard').className = 'heard' + (off ? ' off' : ''); }
+function fill(p){ $('fill').style.width = Math.round(p * 100) + '%'; }
+async function openMic(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { heard('이 브라우저에서는 마이크를 쓸 수 없어요. 크롬이나 사파리에서 열어 주세요.', true); return false; }
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const amps = [0, 1, 0.55, 0.3, 0.17, 0.1, 0.06];
+    wave = ctx.createPeriodicWave(new Float32Array(amps.length), new Float32Array(amps));
+    master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+  }
+  await ctx.resume();
+  // no echo cancelling: the piano is always silent while we listen
+  try { mic = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:true } }); }
+  catch (e) { heard(e.name === 'NotAllowedError' ? '마이크를 허용해 주세요. 주소창 왼쪽 아이콘에서 바꿀 수 있어요.' : '마이크를 열 수 없어요. 연결되어 있는지 확인해 주세요.', true); return false; }
+  analyser = ctx.createAnalyser(); analyser.fftSize = 2048; buf = new Float32Array(2048);
+  ctx.createMediaStreamSource(mic).connect(analyser);
+  timer = setInterval(tick, TICK * 1000);
+  return true;
+}
+function closeMic(){ clearInterval(timer); timer = null; if (mic) mic.getTracks().forEach(t => t.stop()); mic = null; }
+function intro(){
+  phase = 'intro'; say('반음씩 확인하느라 몇 분 걸려요', null, '목에 힘을 빼고 시작해요'); fill(0);
+  buttons([['시작하기', async () => { if (await openMic()) askComfy(); }, 'primary wide']]);
+  heard('조용한 곳에서 해 주세요. 아프거나 불편하면 바로 멈추세요.');
+}
+function askComfy(){ hush(); phase = 'comfy'; frames = []; listenAt = ctx.currentTime + 0.3; say('1단계: 편한 음', null, '가장 편한 높이로 "아~" 하고 길게 내 주세요'); fill(0); heard(''); buttons([]); }
+let osc = null;
+function hush(){ // cut any piano still sounding, so the mic never hears it
+  if (!osc) return;
+  try { osc.stop(ctx.currentTime + 0.06); } catch (e) {}
+  const g = master; g.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.015); setTimeout(() => g.disconnect(), 300);
+  master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination); osc = null;
+}
+function playNote(m, dur){ hush(); osc = voiceNode(hz(m), ctx.currentTime + 0.05, dur, 0.6, 0.35); return ctx.currentTime + 0.05 + dur + 0.25; }
+function confirmComfy(m){
+  phase = 'confirm'; comfy = m; playNote(m, 1.2); fill(1); heard('');
+  say('1단계: 편한 음', m, '피아노 소리와 같은 높이였나요?');
+  buttons([
+    ['네, 같아요', () => { note('편한 음: ' + nm(comfy)); best = { low:comfy, top:comfy }; startDir(-1); }, 'primary wide'],
+    ['더 낮게 냈어요 (한 옥타브)', () => { if (comfy - 12 > LO) { note('편한 음 옥타브 수정: 아래로'); confirmComfy(comfy - 12); } }],
+    ['더 높게 냈어요 (한 옥타브)', () => { if (comfy + 12 < HI) { note('편한 음 옥타브 수정: 위로'); confirmComfy(comfy + 12); } }],
+    ['다시 들려주기', () => playNote(comfy, 1.2)], ['다시 낼게요', askComfy]]);
+}
+const stepName = () => dir < 0 ? '2단계: 낮은 쪽' : '3단계: 높은 쪽';
+function startDir(d){ dir = d; next(comfy + d); }
+function next(m){ if (m < LO || m > HI) { note(sci(m) + ': 측정할 수 있는 범위 끝'); return endDir(); } cur = m; tries = 0; cueNote(); }
+function cueNote(){
+  phase = 'cue'; frames = []; tries++; octLow = 0; fill(0); heard('');
+  until = playNote(cur, 1.0) + 0.15; // wait until the piano has fully faded
+  say(stepName(), cur, '먼저 들어 보세요'); buttons([['그만할래요', giveUp, 'wide']]);
+}
+function listen(){ phase = 'listen'; frames = []; listenAt = ctx.currentTime; until = ctx.currentTime + 6; say(stepName(), cur, '같은 높이로 "아~" 하고 내 주세요'); buttons([['다시 듣기', cueNote], ['못 내겠어요', giveUp]]); }
+function passed(m){
+  phase = 'rate'; fill(1); heard('');
+  const c = Math.round((m - cur) * 100), line = sci(cur) + ' 통과 (' + (c >= 0 ? '+' : '') + c + '센트, ' + tries + '번째) ';
+  say(stepName(), cur, '잘 들렸어요! 이 음이 편했나요?');
+  const key = dir < 0 ? 'low' : 'top';
+  buttons([
+    ['편해요', () => { note(line + '편해요'); best[key] = cur; next(cur + dir); }, 'primary'],
+    ['힘들어요', () => { note(line + '힘들어요'); endDir(); }]]);
+}
+function timeout(){
+  phase = 'miss'; fill(0); note(sci(cur) + ' 못 들음 (' + tries + '번째' + (octLow >= 6 ? ', 한 옥타브 낮게 들림' : '') + ')');
+  say(stepName(), cur, '이 음이 잘 안 들렸어요');
+  heard(octLow >= 6 ? '한 옥타브 낮게 들려요. 긁히는 소리였다면 여기까지가 좋아요.' : '');
+  buttons([['다시 해 볼게요', cueNote, 'primary'], ['못 내겠어요', giveUp]]);
+}
+function giveUp(){ note(sci(cur) + ' 멈춤'); endDir(); }
+function endDir(){
+  if (dir < 0) { phase = 'rest'; fill(0); heard(''); say('잠깐 쉬기', comfy, '낮은 쪽 끝! 편한 음에서 다시 올라가 볼게요'); buttons([['높은 쪽 시작하기', () => startDir(1), 'primary wide']]); }
+  else finish();
+}
+function finish(){
+  phase = 'done'; closeMic(); fill(0); heard('');
+  const r = recommend(best.low, best.top);
+  say('오늘의 음역', best.top, '편한 음역이 나왔어요'); $('big').textContent = sci(best.low) + ' ~ ' + sci(best.top); $('sci').textContent = ko(best.low) + ' ~ ' + ko(best.top);
+  note('편한 음역: ' + sci(best.low) + ' ~ ' + sci(best.top) + ' / 추천 연습 음역: ' + (r.narrow ? '너무 좁아서 못 정함' : sci(r.low) + ' ~ ' + sci(r.top) + ' / ' + r.voices.join(', ')));
+  $('result').hidden = $('check').hidden = $('logBox').hidden = false;
+  $('result').innerHTML = '<h2>추천</h2>' + (r.narrow ? '<p>음역이 너무 좁게 나왔어요. 조용한 곳에서 한 번 더 해 보세요.</p>' :
+    '<div class="row"><span>추천 연습 음역</span><b>' + sci(r.low) + ' ~ ' + sci(r.top) + '</b></div><div class="row"><span>가까운 성부</span><b>' + r.voices.join(', ') + '</b></div><p class="muted">낮은 쪽은 반음, 높은 쪽은 온음 여유를 뒀어요. 목 상태에 따라 달라질 수 있어요.</p>');
+  const opts = '<option value="">고르기</option>' + Array.from({ length:HI - LO + 1 }, (_, i) => '<option value="' + (LO + i) + '">' + nm(LO + i) + '</option>').join('');
+  $('tLow').innerHTML = $('tTop').innerHTML = opts; $('diff').textContent = '';
+  buttons([['처음부터 다시', () => { $('result').hidden = $('check').hidden = true; note('--- 다시 측정 ---'); intro(); }, 'wide']]);
+}
+function compare(){
+  const a = +$('tLow').value, b = +$('tTop').value; if (!a || !b) return;
+  const f = d => d === 0 ? '정확히 맞음' : '반음 ' + Math.abs(d) + '개 ' + (d > 0 ? '높게' : '낮게') + ' 나옴';
+  const s = '최저음: ' + f(best.low - a) + ' / 최고음: ' + f(best.top - b);
+  $('diff').textContent = s; note('실제 ' + sci(a) + ' ~ ' + sci(b) + ' → ' + s);
+}
+function tick(){
+  const t = ctx.currentTime;
+  if (phase === 'cue' && t >= until) return listen();
+  if (phase !== 'comfy' && phase !== 'listen') return;
+  analyser.getFloatTimeDomainData(buf);
+  const f = detectPitch(buf, ctx.sampleRate), m = f ? 69 + 12 * Math.log2(f / 440) : null;
+  if (t < listenAt + 0.05) return; // the buffer may still hold older sound
+  frames.push({ t, m }); if (frames.length > 40) frames.shift();
+  const exp = phase === 'listen' ? cur : null, h = holdCheck(frames, exp);
+  fill(h.prog);
+  if (exp !== null && m !== null && Math.abs(m - exp + 12) <= 0.7) octLow++;
+  if (h.m !== null) { const d = exp === null ? 0 : h.m - exp; heard('들리는 음: ' + sci(Math.round(h.m)) + (Math.abs(d) <= TOL ? '' : d > 0 ? ', 조금 낮춰 보세요' : ', 조금 높여 보세요'), Math.abs(d) > TOL); }
+  if (h.ok) { if (exp === null) { const c = Math.round(h.m); if (c - 1 >= LO && c + 1 <= HI) confirmComfy(c); } else passed(h.m); return; }
+  if (phase === 'listen' && t >= until) timeout();
+}
+function away(){
+  if (!mic) return;
+  hush();
+  closeMic(); const was = phase; phase = 'away'; heard('');
+  $('cue').textContent = '화면을 벗어나서 마이크를 껐어요';
+  buttons([['이어서 하기', async () => { if (await openMic()) { if (was === 'rest') endDir(); else if (was === 'comfy' || was === 'confirm') askComfy(); else cueNote(); } }, 'primary wide']]);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) away(); });
+window.addEventListener('pagehide', away);
+$('tLow').onchange = $('tTop').onchange = compare;
+$('copy').onclick = async () => { try { await navigator.clipboard.writeText($('log').value); $('copy').textContent = '복사했어요'; } catch (e) { $('log').select(); $('copy').textContent = 'Ctrl+C로 복사해 주세요'; } };
+intro();
+</script></body></html>

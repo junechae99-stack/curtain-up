@@ -1,0 +1,1067 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Curtain Up 테스트</title>
+<meta name="robots" content="noindex">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: one phone-width column. A dark "stage" card shows what to sing now (tap = pause); settings below; a sticky play bar at the bottom. */
+:root{
+  --bg:#f6f1f3; --surface:#ffffff; --ink:#2a1520; --muted:#7a6470; --line:#e7dce1;
+  --accent:#8c1d40; --accent-ink:#ffffff; --brass:#a87a22;
+  --stage-bg:#22111a; --stage-ink:#f6ecf0; --stage-muted:#b69fab; --stage-lamp:#f1c76b; --stage-dim:#4a3440;
+  --good:#6fdc9c; --warn:#f1c76b; --off:#ff8fa3;
+  --display:"Bricolage Grotesque","Noto Sans KR",system-ui,sans-serif;
+  --body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Hiragino Sans","Yu Gothic","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#140b10; --surface:#1e1318; --ink:#f3e9ee; --muted:#b39fa9; --line:#352630;
+    --accent:#e0607f; --accent-ink:#22060f; --brass:#e2b45a;
+    --stage-bg:#0b0609; --stage-dim:#3a2832;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#140b10; --surface:#1e1318; --ink:#f3e9ee; --muted:#b39fa9; --line:#352630;
+  --accent:#e0607f; --accent-ink:#22060f; --brass:#e2b45a;
+  --stage-bg:#0b0609; --stage-dim:#3a2832;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 120px}
+.app{max-width:480px;margin:0 auto;display:grid;gap:22px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brandwrap{display:grid;gap:2px}
+.brand{font:800 26px/1 var(--display);letter-spacing:-.6px}
+.brand span{color:var(--accent)}
+.tag{font-size:13px;color:var(--muted)}
+.lang{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 10px;font:500 13px var(--body);cursor:pointer}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* stage */
+.stage{position:relative;overflow:hidden;border-radius:22px;background:var(--stage-bg);color:var(--stage-ink);padding:20px 20px 18px;display:grid;gap:14px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;
+  background-image:radial-gradient(120% 70% at 50% -10%, color-mix(in srgb,var(--stage-lamp) 28%,transparent), transparent 60%)}
+.stage.paused{background-image:radial-gradient(120% 70% at 50% -10%, color-mix(in srgb,var(--stage-lamp) 10%,transparent), transparent 60%)}
+.stage-top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--stage-muted);letter-spacing:.04em}
+.stage-top #exName{text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.live{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--stage-dim)}
+.stage.playing .live i{background:var(--stage-lamp);box-shadow:0 0 10px var(--stage-lamp)}
+.key{display:grid;gap:2px;text-align:center}
+.key .k{font:800 54px/1 var(--display);letter-spacing:-1.5px}
+.key .sci{font:500 13px var(--display);color:var(--stage-muted);letter-spacing:.08em}
+.cue{text-align:center;font-size:14px;color:var(--stage-muted);min-height:22px}
+.stage.paused .cue{color:var(--stage-lamp);font-weight:500}
+.lamps{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.lamp{min-width:36px;padding:7px 5px 5px;border-radius:11px;border:1px solid var(--stage-dim);text-align:center;display:grid;gap:1px;transition:background .12s,border-color .12s,transform .12s}
+.lamp b{font:700 15px var(--body)}
+.lamp small{font:500 10px var(--display);color:var(--stage-muted);letter-spacing:.03em}
+.lamp.on{background:var(--stage-lamp);border-color:var(--stage-lamp);color:#2a1a05;transform:translateY(-3px)}
+.lamp.on small{color:#5a4014}
+.track{position:relative;display:grid;gap:4px;cursor:default}
+.seek{width:100%;accent-color:var(--stage-lamp);height:28px;margin:0;cursor:pointer}
+/* scrub bubble: follows the thumb while dragging, like a video player */
+.scrub-tip{position:absolute;bottom:calc(100% - 2px);left:0;transform:translateX(-50%);background:var(--stage-lamp);color:#2a1a05;font:700 13px var(--display);font-variant-numeric:tabular-nums;padding:4px 9px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:2}
+.scrub-tip small{font:500 11px var(--body);margin-left:6px;color:#5a4014}
+.scrub-tip.show{opacity:1}
+.track.scrubbing #trackTime{color:var(--stage-lamp)}
+@media (prefers-reduced-motion:reduce){.scrub-tip{transition:none}}
+.track-meta{display:flex;justify-content:space-between;gap:8px;font:500 12px var(--display);color:var(--stage-muted);font-variant-numeric:tabular-nums}
+
+/* settings */
+section{display:grid;gap:10px}
+h2{margin:0;font:700 13px var(--body);letter-spacing:.08em;color:var(--muted)}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:3px;gap:3px}
+.tabs button,.seg button{flex:1;border:0;background:transparent;color:var(--muted);border-radius:11px;padding:9px 4px;font-size:13px;font-weight:500;cursor:pointer}
+.tabs button[aria-selected="true"],.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:3px;gap:3px}
+/* speed slider: 0.5x – 2x, 1x = the old "medium" */
+.speed{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 12px 6px;display:grid;gap:2px}
+.speed-head{display:flex;justify-content:space-between;align-items:baseline}
+.speed-head .lbl{font-size:12px;color:var(--muted)}
+.speed-head b{font:700 18px var(--display);font-variant-numeric:tabular-nums;color:var(--accent)}
+.speed-range{width:100%;height:28px;margin:0;accent-color:var(--accent);cursor:pointer}
+.speed-ticks{display:flex;justify-content:space-between;margin:0 -4px}
+.speed-ticks button{border:0;background:none;color:var(--muted);font:500 11px var(--display);padding:4px;cursor:pointer;border-radius:6px;min-width:34px}
+.speed-ticks button:first-child{text-align:left}.speed-ticks button:last-child{text-align:right}
+.speed-ticks button[aria-pressed="true"]{color:var(--accent);font-weight:700}
+.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 12px;text-align:left;cursor:pointer;display:grid;gap:1px}
+.chip b{font-weight:700;font-size:14px}
+.chip small{color:var(--muted);font-size:12px}
+.chip[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;color:var(--muted)}
+.filters button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);font-weight:700}
+.list{display:grid;gap:8px}
+.item{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:12px 14px;text-align:left;cursor:pointer;display:grid;gap:3px;width:100%}
+.item[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.item .row1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.item .name{font-weight:700}
+.item .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pill{font-size:11px;font-weight:700;border:1px solid currentColor;border-radius:999px;padding:1px 8px;white-space:nowrap;color:var(--muted)}
+.pill.brass{color:var(--brass)}
+.item .solf{font-size:14px;letter-spacing:.04em;color:var(--accent);font-weight:500}
+.item .tip{font-size:12px;color:var(--muted)}
+.item .del{border:0;background:none;color:var(--muted);font-size:12px;cursor:pointer;padding:2px 4px;text-decoration:underline}
+.empty{border:1px dashed var(--line);border-radius:16px;padding:14px;color:var(--muted);font-size:13px;text-align:center}
+
+/* builder */
+.builder{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:14px;display:grid;gap:12px}
+.seq{min-height:46px;border-radius:12px;background:var(--bg);padding:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.seq span{background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:3px 9px;font-size:14px;font-weight:700}
+.seq em{color:var(--muted);font-size:13px;font-style:normal}
+.pad{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.pad button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 2px;font-size:14px;font-weight:700;cursor:pointer}
+.pad button small{display:block;font-size:10px;font-weight:500;color:var(--muted)}
+.brow{display:flex;gap:6px;flex-wrap:wrap}
+.brow input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:9px 10px;font:inherit;font-size:14px}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:500;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+.range{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.step{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 12px;display:grid;gap:6px}
+.step .lbl{font-size:12px;color:var(--muted)}
+.step .ctl{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.step .val{display:grid;text-align:center}
+.step .val b{font-size:16px;font-weight:700}
+.step .val small{font:500 11px var(--display);color:var(--muted)}
+.round{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--bg);font:600 18px/1 var(--display);cursor:pointer;flex:none}
+#panelBuild{display:grid;gap:12px}
+.bhead{font-weight:700;font-size:14px}
+.bhint{font-size:12px;color:var(--muted);margin:0}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.slot{border:1px dashed var(--line);border-radius:10px;padding:8px;font-size:12px;min-height:54px;display:grid;align-content:start;gap:2px;background:var(--bg);text-align:left;cursor:pointer}
+.slot.filled{border-style:solid;border-color:var(--accent)}
+.slot b{font-size:11px;color:var(--accent)}
+.slot span{font-weight:700;color:var(--ink)}
+.slot.empty span{font-weight:400;color:var(--muted)}
+.exlist{display:flex;flex-wrap:wrap;gap:6px}
+.exlist button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 11px;font-size:13px;cursor:pointer}
+.exlist button:disabled{opacity:.4;cursor:not-allowed}
+.chips.v3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.chips.v3 .chip{padding:9px 10px}
+.vgroup{display:grid;gap:6px}
+.vgroup-label{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--ink)}
+.vgroup-label::before{content:"";width:4px;height:15px;border-radius:2px;background:var(--accent)}
+details.manual{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:10px 12px}
+details.manual summary{cursor:pointer;font-size:13px;color:var(--muted);font-weight:500}
+details.manual[open] summary{margin-bottom:10px}
+details.manual .range .step{background:var(--bg)}
+.meter{display:grid;gap:6px;cursor:default}
+.meter-bar{position:relative;height:10px;border-radius:999px;background:var(--stage-dim)}
+.meter-bar::before{content:"";position:absolute;left:35%;right:35%;top:0;bottom:0;border-radius:999px;background:color-mix(in srgb,var(--good) 40%,transparent)}
+.meter-bar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--stage-muted);transform:translateX(-50%)}
+.needle{position:absolute;top:-5px;width:6px;height:20px;border-radius:3px;background:var(--stage-muted);left:50%;transform:translateX(-50%);transition:left .15s ease-out,background-color .2s;z-index:1}
+.needle.good{background:var(--good)} .needle.warn{background:var(--warn)} .needle.off{background:var(--off)}
+.meter-text{display:flex;justify-content:space-between;gap:8px;font:500 12px var(--body);color:var(--stage-muted);font-variant-numeric:tabular-nums}
+.verdict{font-weight:700;color:var(--stage-ink)}
+.verdict.good{color:var(--good)} .verdict.warn{color:var(--warn)} .verdict.off{color:var(--off)}
+.micbox{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:12px 14px;display:grid;gap:10px}
+.micbtn{border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:700;cursor:pointer}
+.micbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer}
+.check input{margin-top:3px;accent-color:var(--accent)}
+.micmsg{font-size:12px;color:var(--muted);margin:0}
+.micmsg.err{color:var(--accent);font-weight:500}
+.summary{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.warn{font-size:13px;color:var(--accent);font-weight:500}
+.note{font-size:12px;color:var(--muted);margin:0}
+
+/* play bar */
+.playbar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.playbar .in{max-width:480px;margin:0 auto;display:flex;gap:8px}
+.play{flex:1;border:0;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-size:17px;font-weight:700;padding:15px;cursor:pointer}
+.reset{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:0 16px;font-size:14px;cursor:pointer}
+.play:disabled{opacity:.45;cursor:not-allowed}
+@media (prefers-reduced-motion:reduce){.lamp{transition:none}.lamp.on{transform:none}}
+</style>
+
+<div class="app">
+  <header>
+    <div class="brandwrap">
+      <div class="brand">Curtain<span>Up</span></div>
+      <div class="tag" data-t="tagline"></div>
+    </div>
+    <select class="lang" id="lang" aria-label="Language">
+      <option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh">简体中文</option><option value="es">Español</option>
+    </select>
+  </header>
+
+  <div class="stage" id="stage" role="button" tabindex="0">
+    <div class="stage-top"><span class="live"><i></i><span id="liveText"></span></span><span id="exName"></span></div>
+    <div class="key"><span class="k" id="keyK"></span><span class="sci" id="keySci"></span></div>
+    <div class="lamps" id="lamps"></div>
+    <div class="meter" id="meter" hidden>
+      <div class="meter-bar"><span class="needle" id="needle"></span></div>
+      <div class="meter-text"><span data-t="mLow"></span><span class="verdict" id="verdict"></span><span data-t="mHigh"></span></div>
+      <div class="meter-text"><span id="myNote"></span><span id="score"></span></div>
+    </div>
+    <div class="cue" id="cue"></div>
+    <div class="track" id="track">
+      <div class="scrub-tip" id="scrubTip" aria-hidden="true"></div>
+      <input class="seek" id="seek" type="range" min="0" max="0" step="0.1" value="0">
+      <div class="track-meta"><span id="trackPos"></span><span id="trackTime">0:00</span></div>
+    </div>
+  </div>
+
+  <section>
+    <h2 data-t="hMic"></h2>
+    <div class="micbox">
+      <button class="micbtn" id="micBtn" aria-pressed="false"></button>
+      <label class="check"><input type="checkbox" id="noMelody"><span data-t="noMelody"></span></label>
+      <p class="micmsg" id="micMsg"></p>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-t="hVoice"></h2>
+    <p class="note" data-t="voiceHint"></p>
+    <div class="vgroup"><span class="vgroup-label" data-t="male"></span><div class="chips v3" id="voicesM"></div></div>
+    <div class="vgroup"><span class="vgroup-label" data-t="female"></span><div class="chips v3" id="voicesF"></div></div>
+  </section>
+
+  <section>
+    <h2 data-t="hMode"></h2>
+    <div class="tabs" role="tablist" id="modeTabs">
+      <button role="tab" data-v="single" data-t="tabSingle"></button>
+      <button role="tab" data-v="routine" data-t="tabRoutine"></button>
+      <button role="tab" data-v="build" data-t="tabBuild"></button>
+    </div>
+    <div id="panelSingle" class="list"></div>
+    <div id="panelRoutine" class="list" hidden></div>
+    <div id="panelBuild" hidden></div>
+  </section>
+
+  <details class="manual" id="manual">
+    <summary data-t="manual"></summary>
+    <div class="range">
+      <div class="step"><span class="lbl" data-t="low"></span>
+        <div class="ctl"><button class="round" id="lowDown">−</button><span class="val"><b id="lowK"></b><small id="lowS"></small></span><button class="round" id="lowUp">+</button></div>
+      </div>
+      <div class="step"><span class="lbl" data-t="top"></span>
+        <div class="ctl"><button class="round" id="topDown">−</button><span class="val"><b id="topK"></b><small id="topS"></small></span><button class="round" id="topUp">+</button></div>
+      </div>
+    </div>
+  </details>
+
+  <section>
+    <h2 data-t="hTempo"></h2>
+    <div class="speed" id="speedBox">
+      <div class="speed-head"><label class="lbl" for="speed" data-t="speedLbl"></label><b id="speedVal">1.0×</b></div>
+      <input class="speed-range" id="speed" type="range" min="0.5" max="2" step="0.05" value="1">
+      <div class="speed-ticks" id="speedTicks"><button data-v="0.5">0.5×</button><button data-v="1">1×</button><button data-v="1.5">1.5×</button><button data-v="2">2×</button></div>
+    </div>
+    <div class="seg" id="dir">
+      <button data-v="both" data-t="both"></button><button data-v="up" data-t="up"></button>
+    </div>
+    <div class="summary" id="summary"></div>
+    <div class="warn" id="warn" hidden></div>
+  </section>
+
+  <p class="note" data-t="note"></p>
+</div>
+
+<div class="playbar"><div class="in"><button class="reset" id="resetBtn" data-t="reset"></button><button class="play" id="playBtn"></button></div></div>
+
+<script>
+/* ---------- i18n ---------- */
+const T = {
+ko:{ tagline:'노래하기 전 가볍게 목풀기', hVoice:'내 목소리', hMode:'연습 방식', tabSingle:'연습 하나', tabRoutine:'루틴 코스', tabBuild:'내 패턴 만들기',
+  hRange:'음역', low:'시작 키', top:'가장 높은 음', hTempo:'속도와 방향', slow:'느리게', medium:'보통', fast:'빠르게', both:'올라갔다 내려오기', up:'올라가기만',
+  note:'연습 화면을 누르면 일시정지, 다시 누르면 그 키의 화음부터 이어서 재생돼요. 진행 막대를 끌면 원하는 키로 이동해요. 아이폰은 무음 모드를 끄면 소리가 나요. 목이 아프면 바로 멈추고 쉬어 주세요.',
+  reset:'처음으로', start:'▶ 연습 시작', pause:'❚❚ 일시정지', resume:'▶ 이어서', again:'↻ 다시 하기',
+  st:{ idle:'준비', playing:'연습 중', paused:'일시정지', done:'완료' },
+  cueIdle:'화면이나 아래 버튼을 누르면 피아노가 화음으로 키를 먼저 알려 줘요', cuePaused:'화면을 누르면 이 키의 화음부터 이어서 불러요', cueDone:'수고했어요. 물 한 모금 마시고 즐겁게 노래해요!',
+  cueChord:'화음을 듣고 숨 준비', cueSing:'따라 부르세요', cueEmpty:'음역이 좁아서 재생할 키가 없어요',
+  keys:(a,b)=>`${a} / ${b} 키`, keysNone:'0 키',
+  summary:(lo,tp,n,t)=>`${lo}에서 시작 · 꼭대기 ${tp} · ${n}키 · 약 ${t}`,
+  warnNarrow:'이 연습을 하기엔 음역이 좁아요. 가장 높은 음을 올리거나 시작 키를 내려 주세요.', warnSkipped:l=>`음역이 좁아서 빠진 연습: ${l}`,
+  all:'전체', mine:'내 패턴', emptyMine:'아직 만든 패턴이 없어요. "내 패턴 만들기" 탭에서 만들어 보세요.', del:'삭제',
+  approx:t=>`약 ${t}`, narrow:'음역이 좁아요', seqHint:'아래 건반을 눌러 음을 순서대로 넣어요 (최대 16개)', octUp:'한 옥타브 위',
+  undo:'한 음 지우기', clear:'모두 지우기', tryIt:'들어 보기', namePh:'패턴 이름 (예: 내 고음 루틴)', save:'저장', myN:n=>`내 패턴 ${n}`, draft:'만드는 중인 패턴',
+  stageAria:'눌러서 재생 또는 일시정지', seekAria:'연습할 키로 이동', lowDown:'시작 키 낮추기', lowUp:'시작 키 높이기', topDown:'최고음 낮추기', topUp:'최고음 높이기', badge:'추천',
+  cats:{ wake:'목 깨우기', range:'음역 넓히기', agile:'민첩성', pitch:'음정 다듬기' },
+  voices:{ bass:['남성 저음','베이스 · 바리톤'], tenor:['남성 고음','테너 · 뮤지컬 남성'], alto:['여성 저음','알토 · 메조'], sop:['여성 고음','소프라노'] },
+  ex:{ three:['3음 스케일','허밍이나 립트릴로 가볍게 시작해요.'], siren:['5도 사이렌','"브르르" 립트릴로 미끄러지듯 오르내려요.'],
+    five:['5음 스케일','"마" 또는 "아"로. 위로 갈수록 힘을 빼요.'], arp:['옥타브 아르페지오','꼭대기 도에서 목을 조이지 말고 소리를 띄워요.'],
+    octjump:['옥타브 점프','"야" 모음으로 높은 도에 가볍게 착지해요.'], nine:['9도 롱 스케일','한 호흡에 끝까지. 숨이 모자라면 속도를 올려요.'],
+    stacc:['스타카토 아르페지오','"하 하 하" 배에서 짧게 튕겨요.'], fast5:['빠른 5음 왕복','"냐"로 굴리듯. 정확함이 속도보다 먼저예요.'],
+    thirds:['3도 도약','두 음씩 짝지어 또박또박 짚어요.'], minor:['단조 5음 스케일','미♭의 어두운 색을 귀로 느끼며.'], chrom:['반음계','반음 간격을 하나도 뭉개지 않게 천천히.'] },
+  routines:{ light:['가볍게 5분 목풀기','아침이나 출근길에. 목에 부담 없이 시작해요.'], audition:['꼼꼼하게 10분 목풀기','충분히 풀고 싶은 날에 골라요.'],
+    high:['고음 곡 부르기 전','꼭대기 음을 편하게 만드는 코스예요.'], pitch:['음정 다듬기','귀와 목을 같이 훈련해요.'] } },
+en:{ tagline:'An easy warm-up before you sing', hVoice:'Your voice', hMode:'How to practice', tabSingle:'Exercises', tabRoutine:'Routines', tabBuild:'Create',
+  hRange:'Range', low:'Starting key', top:'Highest note', hTempo:'Speed & direction', slow:'Slow', medium:'Medium', fast:'Fast', both:'Up and back down', up:'Up only',
+  note:'Tap the stage to pause, tap again to resume from that key’s chord. Drag the bar to jump to any key. On iPhone, turn off silent mode to hear sound. If your throat hurts, stop and rest.',
+  reset:'Restart', start:'▶ Start', pause:'❚❚ Pause', resume:'▶ Resume', again:'↻ Again',
+  st:{ idle:'Ready', playing:'Singing', paused:'Paused', done:'Done' },
+  cueIdle:'Tap the stage or the button below. The piano plays the key’s chord first.', cuePaused:'Tap to resume from this key’s chord', cueDone:'Nice work. Grab some water and enjoy singing!',
+  cueChord:'Listen to the chord and breathe in', cueSing:'Sing along', cueEmpty:'The range is too narrow to play any key',
+  keys:(a,b)=>`Key ${a} / ${b}`, keysNone:'0 keys',
+  summary:(lo,tp,n,t)=>`Starts on ${lo} · tops out at ${tp} · ${n} keys · about ${t}`,
+  warnNarrow:'The range is too narrow for this exercise. Raise the highest note or lower the starting key.', warnSkipped:l=>`Skipped because the range is too narrow: ${l}`,
+  all:'All', mine:'My patterns', emptyMine:'No patterns yet. Make one in the Create tab.', del:'Delete',
+  approx:t=>`about ${t}`, narrow:'Range too narrow', seqHint:'Tap the keys below to add notes in order (up to 16)', octUp:'octave up',
+  undo:'Undo', clear:'Clear', tryIt:'Listen', namePh:'Pattern name (e.g. My high-note drill)', save:'Save', myN:n=>`My pattern ${n}`, draft:'Pattern in progress',
+  stageAria:'Tap to play or pause', seekAria:'Jump to a key', lowDown:'Lower starting key', lowUp:'Raise starting key', topDown:'Lower highest note', topUp:'Raise highest note', badge:'Popular pick',
+  cats:{ wake:'Wake up', range:'Extend range', agile:'Agility', pitch:'Pitch' },
+  voices:{ bass:['Low male','Bass · Baritone'], tenor:['High male','Tenor · Musical theatre'], alto:['Low female','Alto · Mezzo'], sop:['High female','Soprano'] },
+  ex:{ three:['3-note scale','Start gently on a hum or lip trill.'], siren:['Fifth siren','Glide up and down on a "brrr" lip trill.'],
+    five:['5-note scale','On "mah" or "ah". Release effort as you go up.'], arp:['Octave arpeggio','Don’t squeeze the top note. Let it float.'],
+    octjump:['Octave leap','Land lightly on the top note with "yah".'], nine:['Ninth long scale','All in one breath. Speed up if you run out of air.'],
+    stacc:['Staccato arpeggio','"Ha ha ha" bounced from the belly.'], fast5:['Fast 5-note run','Roll it on "nya". Accuracy before speed.'],
+    thirds:['Thirds','Pair the notes and hit each one cleanly.'], minor:['Minor 5-note scale','Listen for the darker color of the flat third.'], chrom:['Chromatic','Slowly, keeping every half step distinct.'] },
+  routines:{ light:['Easy 5-minute warm-up','For mornings or the commute. Easy on the voice.'], audition:['Thorough 10-minute warm-up','For days you want to take your time.'],
+    high:['Before a high song','Makes the top of your range feel easy.'], pitch:['Pitch polish','Train your ear and voice together.'] } },
+ja:{ tagline:'歌う前の気軽なウォームアップ', hVoice:'あなたの声', hMode:'練習スタイル', tabSingle:'単体練習', tabRoutine:'ルーティン', tabBuild:'パターン作成',
+  hRange:'音域', low:'開始キー', top:'最高音', hTempo:'速さと方向', slow:'ゆっくり', medium:'ふつう', fast:'速く', both:'上がって下がる', up:'上がるだけ',
+  note:'練習画面をタップすると一時停止、もう一度タップするとそのキーの和音から再開します。バーをドラッグすると好きなキーへ移動できます。iPhoneはマナーモードを解除すると音が出ます。喉が痛いときはすぐ休んでください。',
+  reset:'最初から', start:'▶ スタート', pause:'❚❚ 一時停止', resume:'▶ 再開', again:'↻ もう一度',
+  st:{ idle:'準備OK', playing:'練習中', paused:'一時停止', done:'完了' },
+  cueIdle:'画面か下のボタンをタップ。ピアノが先に和音でキーを知らせます', cuePaused:'タップするとこのキーの和音から再開します', cueDone:'お疲れさまでした。水を一口飲んで楽しく歌いましょう!',
+  cueChord:'和音を聴いて息を準備', cueSing:'一緒に歌って', cueEmpty:'音域が狭くて再生できるキーがありません',
+  keys:(a,b)=>`キー ${a} / ${b}`, keysNone:'0 キー',
+  summary:(lo,tp,n,t)=>`${lo}から開始 · 最高 ${tp} · ${n}キー · 約${t}`,
+  warnNarrow:'この練習には音域が狭すぎます。最高音を上げるか開始キーを下げてください。', warnSkipped:l=>`音域が狭いため省略: ${l}`,
+  all:'すべて', mine:'マイパターン', emptyMine:'まだパターンがありません。「パターン作成」タブで作ってみましょう。', del:'削除',
+  approx:t=>`約${t}`, narrow:'音域が狭い', seqHint:'下の鍵盤をタップして音を順番に入れます(最大16個)', octUp:'1オクターブ上',
+  undo:'1音消す', clear:'全部消す', tryIt:'聴いてみる', namePh:'パターン名(例:高音ルーティン)', save:'保存', myN:n=>`マイパターン ${n}`, draft:'作成中のパターン',
+  stageAria:'タップで再生・一時停止', seekAria:'キーへ移動', lowDown:'開始キーを下げる', lowUp:'開始キーを上げる', topDown:'最高音を下げる', topUp:'最高音を上げる', badge:'おすすめ',
+  cats:{ wake:'ウォームアップ', range:'音域を広げる', agile:'敏捷性', pitch:'音程' },
+  voices:{ bass:['男性・低音','バス · バリトン'], tenor:['男性・高音','テノール · ミュージカル'], alto:['女性・低音','アルト · メゾ'], sop:['女性・高音','ソプラノ'] },
+  ex:{ three:['3音スケール','ハミングかリップトリルで軽く始めましょう。'], siren:['5度サイレン','リップトリルで滑らかに上下します。'],
+    five:['5音スケール','「マ」か「ア」で。上がるほど力を抜いて。'], arp:['オクターブアルペジオ','てっぺんで喉を締めず、声を浮かせて。'],
+    octjump:['オクターブ跳躍','「ヤ」で高いドに軽く着地。'], nine:['9度ロングスケール','ひと息で最後まで。息が足りなければ速度を上げて。'],
+    stacc:['スタッカートアルペジオ','「ハッハッハッ」とお腹から短く。'], fast5:['速い5音往復','「ニャ」で転がすように。速さより正確さ。'],
+    thirds:['3度跳躍','2音ずつ組にして、はっきりと。'], minor:['短調5音スケール','ミ♭の暗い響きを耳で感じて。'], chrom:['半音階','半音を一つもつぶさず、ゆっくり。'] },
+  routines:{ light:['気軽に5分ウォームアップ','朝や通勤中に。喉に負担なく始めます。'], audition:['じっくり10分ウォームアップ','しっかりほぐしたい日に。'],
+    high:['高い曲を歌う前に','てっぺんの音を楽にするコース。'], pitch:['音程を整える','耳と声を一緒に鍛えます。'] } },
+zh:{ tagline:'唱歌前的轻松开嗓', hVoice:'你的声部', hMode:'练习方式', tabSingle:'单项练习', tabRoutine:'组合课程', tabBuild:'自建音型',
+  hRange:'音域', low:'起始调', top:'最高音', hTempo:'速度与方向', slow:'慢', medium:'中', fast:'快', both:'上行再下行', up:'只上行',
+  note:'点击练习画面暂停,再点一次从该调的和弦继续。拖动进度条可跳到任意调。iPhone 需关闭静音模式才有声音。嗓子疼请立刻停下休息。',
+  reset:'从头开始', start:'▶ 开始练习', pause:'❚❚ 暂停', resume:'▶ 继续', again:'↻ 再来一遍',
+  st:{ idle:'准备', playing:'练习中', paused:'已暂停', done:'完成' },
+  cueIdle:'点击画面或下方按钮,钢琴会先用和弦告诉你调', cuePaused:'点击后从这个调的和弦继续', cueDone:'辛苦了!喝口水,开心唱歌吧!',
+  cueChord:'听和弦,准备吸气', cueSing:'跟着唱', cueEmpty:'音域太窄,没有可播放的调',
+  keys:(a,b)=>`第 ${a} / ${b} 调`, keysNone:'0 个调',
+  summary:(lo,tp,n,t)=>`从 ${lo} 开始 · 最高 ${tp} · ${n} 个调 · 约 ${t}`,
+  warnNarrow:'这个练习的音域太窄。请调高最高音或降低起始调。', warnSkipped:l=>`因音域太窄而跳过:${l}`,
+  all:'全部', mine:'我的音型', emptyMine:'还没有音型。去“自建音型”里做一个吧。', del:'删除',
+  approx:t=>`约 ${t}`, narrow:'音域太窄', seqHint:'点击下方琴键,按顺序加入音(最多 16 个)', octUp:'高八度',
+  undo:'删一个音', clear:'全部清除', tryIt:'试听', namePh:'音型名称(例:我的高音练习)', save:'保存', myN:n=>`我的音型 ${n}`, draft:'正在编辑的音型',
+  stageAria:'点击播放或暂停', seekAria:'跳到某个调', lowDown:'降低起始调', lowUp:'升高起始调', topDown:'降低最高音', topUp:'升高最高音', badge:'推荐',
+  cats:{ wake:'唤醒嗓子', range:'拓展音域', agile:'灵活度', pitch:'音准' },
+  voices:{ bass:['男低音','男低音 · 男中音'], tenor:['男高音','男高音 · 音乐剧'], alto:['女低音','女低音 · 女中音'], sop:['女高音','女高音'] },
+  ex:{ three:['三音音阶','用哼鸣或唇颤音轻松开始。'], siren:['五度滑音','用“嘟噜噜”唇颤音上下滑动。'],
+    five:['五音音阶','用“ma”或“a”。越往上越放松。'], arp:['八度琶音','顶端不要挤嗓子,让声音浮起来。'],
+    octjump:['八度跳跃','用“ya”轻轻落在高音 do 上。'], nine:['九度长音阶','一口气唱完。气不够就加快速度。'],
+    stacc:['跳音琶音','“哈哈哈”从腹部短促弹出。'], fast5:['快速五音往返','用“nia”滚动着唱。准确比速度重要。'],
+    thirds:['三度跳进','两个音一组,清楚地唱准。'], minor:['小调五音音阶','用耳朵感受降 mi 的暗色。'], chrom:['半音阶','慢慢唱,每个半音都不含糊。'] },
+  routines:{ light:['轻松 5 分钟开嗓','早上或通勤路上,不给嗓子负担。'], audition:['充分 10 分钟开嗓','想充分热身的日子选这个。'],
+    high:['唱高音歌之前','让高音变轻松的课程。'], pitch:['音准打磨','耳朵和嗓子一起练。'] } },
+es:{ tagline:'Calienta la voz antes de cantar', hVoice:'Tu voz', hMode:'Modo de práctica', tabSingle:'Ejercicios', tabRoutine:'Rutinas', tabBuild:'Crear',
+  hRange:'Registro', low:'Tono inicial', top:'Nota más alta', hTempo:'Velocidad y dirección', slow:'Lento', medium:'Medio', fast:'Rápido', both:'Subir y bajar', up:'Solo subir',
+  note:'Toca el escenario para pausar y otra vez para seguir desde el acorde de ese tono. Arrastra la barra para saltar a cualquier tono. En iPhone, desactiva el modo silencio. Si te duele la garganta, para y descansa.',
+  reset:'Reiniciar', start:'▶ Empezar', pause:'❚❚ Pausa', resume:'▶ Seguir', again:'↻ Otra vez',
+  st:{ idle:'Listo', playing:'Cantando', paused:'En pausa', done:'Terminado' },
+  cueIdle:'Toca el escenario o el botón. El piano toca primero el acorde del tono.', cuePaused:'Toca para seguir desde el acorde de este tono', cueDone:'¡Buen trabajo! Bebe agua y a disfrutar cantando.',
+  cueChord:'Escucha el acorde y respira', cueSing:'Canta', cueEmpty:'El registro es demasiado estrecho para tocar algún tono',
+  keys:(a,b)=>`Tono ${a} / ${b}`, keysNone:'0 tonos',
+  summary:(lo,tp,n,t)=>`Empieza en ${lo} · llega a ${tp} · ${n} tonos · unos ${t}`,
+  warnNarrow:'El registro es demasiado estrecho para este ejercicio. Sube la nota más alta o baja el tono inicial.', warnSkipped:l=>`Omitidos por registro estrecho: ${l}`,
+  all:'Todos', mine:'Mis patrones', emptyMine:'Aún no tienes patrones. Crea uno en la pestaña Crear.', del:'Borrar',
+  approx:t=>`unos ${t}`, narrow:'Registro estrecho', seqHint:'Toca las teclas para añadir notas en orden (máx. 16)', octUp:'octava arriba',
+  undo:'Deshacer', clear:'Borrar todo', tryIt:'Escuchar', namePh:'Nombre (p. ej. Mis agudos)', save:'Guardar', myN:n=>`Mi patrón ${n}`, draft:'Patrón en curso',
+  stageAria:'Toca para reproducir o pausar', seekAria:'Saltar a un tono', lowDown:'Bajar tono inicial', lowUp:'Subir tono inicial', topDown:'Bajar nota más alta', topUp:'Subir nota más alta', badge:'Recomendado',
+  cats:{ wake:'Despertar', range:'Ampliar registro', agile:'Agilidad', pitch:'Afinación' },
+  voices:{ bass:['Hombre grave','Bajo · Barítono'], tenor:['Hombre agudo','Tenor · Teatro musical'], alto:['Mujer grave','Contralto · Mezzo'], sop:['Mujer aguda','Soprano'] },
+  ex:{ three:['Escala de 3 notas','Empieza suave con un zumbido o trino de labios.'], siren:['Sirena de quinta','Desliza arriba y abajo con un trino "brrr".'],
+    five:['Escala de 5 notas','Con "ma" o "a". Suelta el esfuerzo al subir.'], arp:['Arpegio de octava','No aprietes la nota alta. Déjala flotar.'],
+    octjump:['Salto de octava','Aterriza suave en el Do agudo con "ya".'], nine:['Escala larga de novena','Todo en una respiración. Acelera si te falta aire.'],
+    stacc:['Arpegio staccato','"Ja ja ja" rebotando desde el abdomen.'], fast5:['Carrera rápida de 5 notas','Ruédala con "ña". Precisión antes que velocidad.'],
+    thirds:['Terceras','Agrupa las notas de dos en dos, limpias.'], minor:['Escala menor de 5 notas','Escucha el color oscuro del Mi bemol.'], chrom:['Cromática','Despacio, cada semitono bien claro.'] },
+  routines:{ light:['Calentamiento suave de 5 minutos','Para la mañana o el trayecto. Sin forzar la voz.'], audition:['Calentamiento completo de 10 minutos','Para los días con más tiempo.'],
+    high:['Antes de una canción aguda','Para que la parte alta se sienta fácil.'], pitch:['Pulir afinación','Entrena oído y voz a la vez.'] } },
+};
+const EXTRA = {
+ko:{ male:'남성', female:'여성', voiceHint:'고르기만 하면 그 목소리의 평균 음역으로 자동 설정돼요.', manual:'음역 직접 조절 (선택)',
+  hMic:'음정 피드백', micOn:'🎤 음정 피드백 켜기', micOff:'🎤 음정 피드백 끄기',
+  micHint:'이어폰을 끼면 피아노 소리가 마이크에 섞이지 않아 더 정확해요.', noMelody:'이어폰이 없어요 (멜로디는 소리 없이 화면으로만 안내)',
+  micListening:'마이크가 켜졌어요. 연습을 시작하고 따라 불러 보세요.', micBlocked:'이 화면에서는 보안상 마이크를 쓸 수 없어요. 크롬이나 사파리에서 링크를 직접 열어 주세요.',
+  micDenied:'마이크 권한이 거부됐어요. 브라우저 주소창의 사이트 설정에서 마이크를 허용해 주세요.', micNoSupport:'이 브라우저는 마이크를 지원하지 않아요.',
+  inTune:'정확해요', sharpS:'조금 높아요', flatS:'조금 낮아요', sharp:'높아요', flat:'낮아요', noVoice:'소리를 내 주세요', waiting:'다음 음을 기다리는 중',
+  mLow:'낮음', mHigh:'높음', myNote:(n,c)=>`내 음 ${n}${c===null?'':` · ${c>0?'+':''}${c}센트`}`, scoreLive:p=>`정확도 ${p}%`,
+  doneScore:(p,b,w)=>`음정 정확도 ${p}%. 가장 정확했던 키 ${b}${w?`, 더 연습할 키 ${w}`:''}`,
+  voices:{ tenor:['테너','높은 남성'], baritone:['바리톤','중간 남성'], bass:['베이스','낮은 남성'], soprano:['소프라노','높은 여성'], mezzo:['메조소프라노','중간 여성'], alto:['알토','낮은 여성'] } },
+en:{ male:'Male', female:'Female', voiceHint:'Pick one and the range is set to that voice’s typical range.', manual:'Adjust range yourself (optional)',
+  hMic:'Pitch feedback', micOn:'🎤 Turn on pitch feedback', micOff:'🎤 Turn off pitch feedback',
+  micHint:'Use earphones so the piano doesn’t leak into the mic.', noMelody:'No earphones (melody is shown on screen, not played)',
+  micListening:'Mic is on. Start practicing and sing along.', micBlocked:'The microphone is blocked on this screen for security. Open the link directly in Chrome or Safari.',
+  micDenied:'Microphone access was denied. Allow it in your browser’s site settings.', micNoSupport:'This browser doesn’t support the microphone.',
+  inTune:'In tune', sharpS:'A little sharp', flatS:'A little flat', sharp:'Sharp', flat:'Flat', noVoice:'Sing a note', waiting:'Waiting for the next note',
+  mLow:'flat', mHigh:'sharp', myNote:(n,c)=>`You: ${n}${c===null?'':` · ${c>0?'+':''}${c} cents`}`, scoreLive:p=>`Accuracy ${p}%`,
+  doneScore:(p,b,w)=>`Pitch accuracy ${p}%. Best key ${b}${w?`, practice more on ${w}`:''}.`,
+  voices:{ tenor:['Tenor','High male'], baritone:['Baritone','Middle male'], bass:['Bass','Low male'], soprano:['Soprano','High female'], mezzo:['Mezzo','Middle female'], alto:['Alto','Low female'] } },
+ja:{ male:'男性', female:'女性', voiceHint:'選ぶだけでその声種の平均的な音域に自動設定されます。', manual:'音域を自分で調整(任意)',
+  hMic:'音程フィードバック', micOn:'🎤 音程フィードバックをオン', micOff:'🎤 音程フィードバックをオフ',
+  micHint:'イヤホンを使うとピアノの音がマイクに入らず、より正確です。', noMelody:'イヤホンなし(メロディは音を出さず画面だけで案内)',
+  micListening:'マイクがオンになりました。練習を始めて一緒に歌ってください。', micBlocked:'この画面ではセキュリティ上マイクを使えません。ChromeかSafariでリンクを直接開いてください。',
+  micDenied:'マイクの許可が拒否されました。ブラウザのサイト設定で許可してください。', micNoSupport:'このブラウザはマイクに対応していません。',
+  inTune:'正確です', sharpS:'少し高い', flatS:'少し低い', sharp:'高い', flat:'低い', noVoice:'声を出してください', waiting:'次の音を待っています',
+  mLow:'低い', mHigh:'高い', myNote:(n,c)=>`あなたの音 ${n}${c===null?'':` · ${c>0?'+':''}${c}セント`}`, scoreLive:p=>`正確度 ${p}%`,
+  doneScore:(p,b,w)=>`音程の正確度 ${p}%。いちばん正確だったキー ${b}${w?`、もっと練習したいキー ${w}`:''}`,
+  voices:{ tenor:['テノール','高い男声'], baritone:['バリトン','中間の男声'], bass:['バス','低い男声'], soprano:['ソプラノ','高い女声'], mezzo:['メゾソプラノ','中間の女声'], alto:['アルト','低い女声'] } },
+zh:{ male:'男声', female:'女声', voiceHint:'选好声部就会自动设置为该声部的平均音域。', manual:'手动调整音域(可选)',
+  hMic:'音准反馈', micOn:'🎤 开启音准反馈', micOff:'🎤 关闭音准反馈',
+  micHint:'戴耳机可以避免钢琴声混进麦克风,结果更准确。', noMelody:'没有耳机(旋律不发声,只在屏幕上提示)',
+  micListening:'麦克风已开启。开始练习并跟着唱吧。', micBlocked:'出于安全原因,此画面无法使用麦克风。请直接用 Chrome 或 Safari 打开链接。',
+  micDenied:'麦克风权限被拒绝。请在浏览器的网站设置中允许。', micNoSupport:'此浏览器不支持麦克风。',
+  inTune:'很准', sharpS:'稍微偏高', flatS:'稍微偏低', sharp:'偏高', flat:'偏低', noVoice:'请发声', waiting:'等待下一个音',
+  mLow:'低', mHigh:'高', myNote:(n,c)=>`你的音 ${n}${c===null?'':` · ${c>0?'+':''}${c} 音分`}`, scoreLive:p=>`准确度 ${p}%`,
+  doneScore:(p,b,w)=>`音准准确度 ${p}%。最准的调 ${b}${w?`,需要多练的调 ${w}`:''}`,
+  voices:{ tenor:['男高音','高音男声'], baritone:['男中音','中音男声'], bass:['男低音','低音男声'], soprano:['女高音','高音女声'], mezzo:['女中音','中音女声'], alto:['女低音','低音女声'] } },
+es:{ male:'Hombre', female:'Mujer', voiceHint:'Elige una y el registro se ajusta al promedio de esa voz.', manual:'Ajustar el registro a mano (opcional)',
+  hMic:'Afinación en vivo', micOn:'🎤 Activar afinación', micOff:'🎤 Desactivar afinación',
+  micHint:'Usa auriculares para que el piano no entre en el micrófono.', noMelody:'Sin auriculares (la melodía se muestra en pantalla, sin sonido)',
+  micListening:'Micrófono activo. Empieza a practicar y canta.', micBlocked:'Por seguridad, el micrófono está bloqueado en esta pantalla. Abre el enlace directamente en Chrome o Safari.',
+  micDenied:'Se denegó el acceso al micrófono. Permítelo en los ajustes del sitio del navegador.', micNoSupport:'Este navegador no admite el micrófono.',
+  inTune:'Afinado', sharpS:'Un poco alto', flatS:'Un poco bajo', sharp:'Alto', flat:'Bajo', noVoice:'Canta una nota', waiting:'Esperando la siguiente nota',
+  mLow:'bajo', mHigh:'alto', myNote:(n,c)=>`Tú: ${n}${c===null?'':` · ${c>0?'+':''}${c} cents`}`, scoreLive:p=>`Precisión ${p}%`,
+  doneScore:(p,b,w)=>`Afinación ${p}%. Mejor tono ${b}${w?`, practica más ${w}`:''}.`,
+  voices:{ tenor:['Tenor','Hombre agudo'], baritone:['Barítono','Hombre medio'], bass:['Bajo','Hombre grave'], soprano:['Soprano','Mujer aguda'], mezzo:['Mezzo','Mujer media'], alto:['Contralto','Mujer grave'] } },
+};
+const COMBO = {
+ko:{ comboTitle:'연습 묶기 (최대 3개)', comboHint:'연습을 눌러 순서대로 담아요. 하나가 끝나면 3초 뒤 다음 연습이 이어져요. 담긴 칸을 누르면 빠져요.', slotEmpty:'비어 있음',
+  comboNamePh:'루틴 이름 (예: 내 아침 루틴)', myRoutineN:n=>`내 루틴 ${n}`, patTitle:'음 패턴 만들기', nextUp:(n,s)=>`${s}초 뒤 다음 연습: ${n}`, myTag:'내 루틴', comboDraft:'만드는 중인 루틴' },
+en:{ comboTitle:'Combine exercises (up to 3)', comboHint:'Tap exercises to add them in order. Each starts 3 seconds after the previous one ends. Tap a filled slot to remove it.', slotEmpty:'Empty',
+  comboNamePh:'Routine name (e.g. My morning set)', myRoutineN:n=>`My routine ${n}`, patTitle:'Build a note pattern', nextUp:(n,s)=>`Next in ${s}s: ${n}`, myTag:'My routine', comboDraft:'Routine in progress' },
+ja:{ comboTitle:'練習を組み合わせる(最大3つ)', comboHint:'練習をタップして順番に入れます。1つ終わると3秒後に次の練習が始まります。入れた枠をタップすると外れます。', slotEmpty:'空き',
+  comboNamePh:'ルーティン名(例:朝のルーティン)', myRoutineN:n=>`マイルーティン ${n}`, patTitle:'音のパターンを作る', nextUp:(n,s)=>`${s}秒後に次の練習: ${n}`, myTag:'マイルーティン', comboDraft:'作成中のルーティン' },
+zh:{ comboTitle:'组合练习(最多 3 个)', comboHint:'点击练习按顺序加入。一个结束后 3 秒自动开始下一个。点击已加入的格子可移除。', slotEmpty:'空',
+  comboNamePh:'课程名称(例:我的早晨练习)', myRoutineN:n=>`我的课程 ${n}`, patTitle:'自建音型', nextUp:(n,s)=>`${s} 秒后下一个练习:${n}`, myTag:'我的课程', comboDraft:'正在编辑的课程' },
+es:{ comboTitle:'Combinar ejercicios (hasta 3)', comboHint:'Toca ejercicios para añadirlos en orden. Cada uno empieza 3 segundos después del anterior. Toca una casilla llena para quitarla.', slotEmpty:'Vacío',
+  comboNamePh:'Nombre de la rutina (p. ej. Mi mañana)', myRoutineN:n=>`Mi rutina ${n}`, patTitle:'Crear un patrón de notas', nextUp:(n,s)=>`Siguiente en ${s} s: ${n}`, myTag:'Mi rutina', comboDraft:'Rutina en curso' },
+};
+const SPEED_T = { ko:{ speedLbl:'빠르기 (드래그해서 조절)' }, en:{ speedLbl:'Speed (drag to adjust)' }, ja:{ speedLbl:'速さ(ドラッグで調整)' }, zh:{ speedLbl:'速度(拖动调整)' }, es:{ speedLbl:'Velocidad (arrastra para ajustar)' } };
+const VOICE_T = { ko:{ male:'남자', female:'여자' }, en:{ male:'Men', female:'Women' }, ja:{ male:'男性', female:'女性' }, zh:{ male:'男生', female:'女生' }, es:{ male:'Hombres', female:'Mujeres' } };
+const AWAY_T = { ko:{ micAway:'화면을 벗어나서 마이크를 껐어요. 다시 켜려면 위 버튼을 눌러 주세요.' }, en:{ micAway:'You left this screen, so the mic was turned off. Tap the button above to turn it back on.' }, ja:{ micAway:'画面を離れたのでマイクをオフにしました。上のボタンでもう一度オンにできます。' }, zh:{ micAway:'你离开了此画面,麦克风已关闭。点击上方按钮可重新开启。' }, es:{ micAway:'Saliste de la pantalla y se apagó el micrófono. Toca el botón de arriba para activarlo.' } };
+const SCORE_T = { ko:{ sungOf:(a,b)=>`(부른 키 ${a}/${b})` }, en:{ sungOf:(a,b)=>`(sang ${a} of ${b} keys)` }, ja:{ sungOf:(a,b)=>`(歌ったキー ${a}/${b})` }, zh:{ sungOf:(a,b)=>`(唱了 ${a}/${b} 个调)` }, es:{ sungOf:(a,b)=>`(cantaste ${a} de ${b} tonos)` } };
+Object.keys(EXTRA).forEach(l => Object.assign(T[l], EXTRA[l], COMBO[l], SPEED_T[l], VOICE_T[l], SCORE_T[l], AWAY_T[l]));
+/* note naming per language */
+const SCI = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const LAMP = {
+  ko:['도','도#','레','레#','미','파','파#','솔','솔#','라','라#','시'],
+  en:SCI,
+  ja:['ド','ド#','レ','レ#','ミ','ファ','ファ#','ソ','ソ#','ラ','ラ#','シ'],
+  zh:['do','do#','re','re#','mi','fa','fa#','sol','sol#','la','la#','si'],
+  es:['Do','Do#','Re','Re#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'],
+};
+const DEGREE = {
+  ko:{0:'도',1:'도#',2:'레',3:'미♭',4:'미',5:'파',6:'파#',7:'솔',8:'솔#',9:'라',10:'시♭',11:'시'},
+  ja:{0:'ド',1:'ド#',2:'レ',3:'ミ♭',4:'ミ',5:'ファ',6:'ファ#',7:'ソ',8:'ソ#',9:'ラ',10:'シ♭',11:'シ'},
+  es:{0:'Do',1:'Do#',2:'Re',3:'Mi♭',4:'Mi',5:'Fa',6:'Fa#',7:'Sol',8:'Sol#',9:'La',10:'Si♭',11:'Si'},
+  num:{0:'1',1:'#1',2:'2',3:'♭3',4:'3',5:'4',6:'#4',7:'5',8:'#5',9:'6',10:'♭7',11:'7'},
+};
+const sci = m => SCI[m % 12] + (Math.floor(m / 12) - 1);
+const korOct = m => { const o = Math.floor(m / 12) - 3; return (o >= 1 ? o + '옥 ' : '저음 ') + LAMP.ko[m % 12]; };
+let L = 'ko';
+const t = () => T[L];
+const keyBig = m => L === 'ko' ? korOct(m) : sci(m);
+const keySmall = m => L === 'ko' ? sci(m) : (L === 'en' ? '' : LAMP[L][m % 12]);
+function degName(iv){
+  if (L === 'en') { const d = DEGREE.num[iv % 12]; return iv >= 12 ? d.replace(/\d+/, x => +x + 7) : d; }
+  if (L === 'zh') { const d = DEGREE.num[iv % 12]; return iv >= 12 ? d + '̇' : d; }
+  return DEGREE[L][iv % 12] + (iv >= 12 ? '↑' : '');
+}
+const solfOf = pat => pat.map(degName).join(L === 'en' ? '-' : ' ');
+
+/* ---------- music data ---------- */
+/* typical warm-up ranges per voice type: low = first key's root, top = highest note sung */
+const VOICES = [
+  { id:'tenor', g:'m', low:48, top:72 },    // C3 – C5
+  { id:'baritone', g:'m', low:45, top:69 }, // A2 – A4
+  { id:'bass', g:'m', low:41, top:64 },     // F2 – E4
+  { id:'soprano', g:'f', low:60, top:84 },  // C4 – C6
+  { id:'mezzo', g:'f', low:57, top:81 },    // A3 – A5
+  { id:'alto', g:'f', low:53, top:77 },     // F3 – F5
+];
+const EXERCISES = [
+  { id:'three', cat:'wake', pat:[0,2,4,2,0] },
+  { id:'siren', cat:'wake', pat:[0,7,0], art:'glide' },
+  { id:'five', cat:'range', pat:[0,2,4,5,7,5,4,2,0], badge:true },
+  { id:'arp', cat:'range', pat:[0,4,7,12,7,4,0], badge:true },
+  { id:'octjump', cat:'range', pat:[0,12,7,4,0] },
+  { id:'nine', cat:'range', pat:[0,2,4,5,7,9,11,12,14,12,11,9,7,5,4,2,0], speed:0.75 },
+  { id:'stacc', cat:'agile', pat:[0,4,7,4,0], art:'staccato' },
+  { id:'fast5', cat:'agile', pat:[0,2,4,5,7,5,4,2,0,2,4,5,7,5,4,2,0], speed:0.6 },
+  { id:'thirds', cat:'agile', pat:[0,4,2,5,4,7,5,2,0] },
+  { id:'minor', cat:'pitch', pat:[0,2,3,5,7,5,3,2,0] },
+  { id:'chrom', cat:'pitch', pat:[0,1,2,3,4,3,2,1,0], speed:1.15 },
+];
+const ROUTINES = [
+  { id:'light', items:['three','siren','five'], mins:5, ease:4 },
+  { id:'audition', items:['three','siren','five','arp','stacc','nine'], mins:10 },
+  { id:'high', items:['siren','arp','octjump','nine'], mins:7 },
+  { id:'pitch', items:['three','chrom','minor','thirds'], mins:8, ease:3 },
+];
+const exName = e => !e ? '' : e.id.startsWith('my-') ? (e.id === 'my-draft' ? t().draft : e.name) : t().ex[e.id][0];
+const isMine = r => r.id.startsWith('mr-');
+const allRoutines = () => ROUTINES.concat(S.myRoutines);
+const routineName = r => isMine(r) ? (r.id === 'mr-draft' ? t().comboDraft : r.name) : t().routines[r.id][0];
+const SEG_GAP = 2.6; // + the 0.45 s tail after the last key ≈ 3 s between exercises
+const exTip = e => e.id.startsWith('my-') ? '' : t().ex[e.id][1];
+
+/* ---------- state ---------- */
+const BASE_NOTE = 0.42; // seconds per note at 1x (the old "medium")
+const clampSpeed = x => Math.min(2, Math.max(0.5, Math.round(x * 20) / 20));
+const fmtSpeed = x => x.toFixed(2).replace(/0$/, '') + '×';
+const DEFAULT = { voice:'tenor', mode:'single', ex:'five', routine:'light', cat:'all', low:48, top:72, speed:1, dir:'both', custom:[], myRoutines:[], lang:null, noMelody:false };
+let S = { ...DEFAULT }, saved = {};
+try { saved = JSON.parse(localStorage.getItem('curtainup-test') || '{}') || {}; S = { ...DEFAULT, ...saved }; } catch(e) {}
+if (saved.tempo && !saved.speed) S.speed = BASE_NOTE / saved.tempo; // migrate old slow/medium/fast buttons
+delete S.tempo; S.speed = clampSpeed(+S.speed || 1);
+if (S.voice === 'sop') S.voice = 'soprano';
+if (!VOICES.some(v => v.id === S.voice)) S.voice = 'tenor';
+if (S.mode === 'build') S.mode = 'single';
+if (!S.lang) { const n = (navigator.language || 'ko').slice(0, 2).toLowerCase(); S.lang = T[n] ? n : 'en'; }
+L = S.lang;
+const persist = () => { try { localStorage.setItem('curtainup-test', JSON.stringify(S)); } catch(e) {} };
+const $ = id => document.getElementById(id);
+const allEx = () => EXERCISES.concat(S.custom);
+const exById = id => allEx().find(e => e.id === id);
+let tab = S.mode;
+
+/* ---------- plan ---------- */
+/* built-in routines have a target length (mins, at 1x) and may stay below the top note (ease, in semitones).
+   FIT = semitones between keys going [up, down]; the pair closest to the target wins. Chosen at 1x so changing speed keeps the same keys. */
+const FIT = [[1,1],[1,2],[1,3],[1,4],[1,6],[2,2],[2,3],[3,3]];
+function buildPlan(){
+  const r = S.mode === 'routine' ? allRoutines().find(x => x.id === S.routine) : null;
+  const list = S.mode === 'routine' ? (r?.items || []).map(exById) : [exById(S.ex)];
+  if (!r?.mins) return makePlan(list, [1,1], r?.ease || 0, S.speed);
+  const off = st => Math.abs((makePlan(list, st, r.ease || 0, 1).total || 0) - r.mins * 60);
+  return makePlan(list, FIT.reduce((a, b) => off(b) < off(a) ? b : a), r.ease || 0, S.speed);
+}
+function makePlan(list, [stepUp, stepDown], ease, speed){
+  const ev = [], keys = [], segs = [], skipped = [];
+  let tt = 0.25, hi = 0;
+  list.forEach(ex => {
+    if (!ex) return;
+    const pat = ex.pat, fullRoot = S.top - Math.max(...pat);
+    if (fullRoot < S.low) { skipped.push(ex); return; }
+    const maxRoot = Math.max(S.low, fullRoot - ease);
+    const roots = [];
+    for (let r = S.low; r <= maxRoot; r += stepUp) roots.push(r);
+    const peak = roots[roots.length - 1]; hi = Math.max(hi, peak + Math.max(...pat));
+    if (S.dir === 'both') for (let r = peak - stepDown; r >= S.low; r -= stepDown) roots.push(r);
+    if (segs.length) tt += SEG_GAP;
+    const seg = segs.push({ ex }) - 1;
+    const len = BASE_NOTE / speed * (ex.speed || 1);
+    roots.forEach(r => {
+      const k = keys.push({ t:tt, root:r, seg }) - 1;
+      ev.push({ t:tt, k, seg, root:r, cue:true, notes:[r - 12, r, r + 4, r + 7], dur:0.9 });
+      tt += 1.15;
+      if (ex.art === 'glide') {
+        const d = len * 6;
+        ev.push({ t:tt, k, seg, root:r, i:0, glide: pat.map(iv => r + iv), dur:d });
+        tt += d + len;
+      } else {
+        pat.forEach((iv, i) => {
+          const last = i === pat.length - 1;
+          const step = last ? len * 2 : len;
+          const dur = ex.art === 'staccato' ? Math.min(len * 0.45, 0.2) : (last ? len * 2 : len * 0.92);
+          ev.push({ t:tt, k, seg, root:r, i, notes:[r + iv], dur });
+          tt += step;
+        });
+      }
+      tt += 0.45;
+    });
+  });
+  if (!keys.length) return { empty:true, skipped };
+  return { ev, keys, segs, skipped, hi, total: tt + 0.6 };
+}
+const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(Math.max(0, s) % 60)).padStart(2, '0');
+
+/* ---------- audio ---------- */
+let ctx = null, wave = null, master = null, timer = null, t0 = 0, nextIdx = 0;
+let P = buildPlan(), state = 'idle', pos = 0;
+function ensureAudio(){
+  if (ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ctx.onstatechange = () => { if (ctx.state !== 'running') pause(); }; // e.g. a phone call takes over the sound
+  const amps = [0, 1, 0.55, 0.3, 0.17, 0.1, 0.06];
+  wave = ctx.createPeriodicWave(new Float32Array(amps.length), new Float32Array(amps));
+}
+function voiceNode(f, at, dur, vel, sustain){
+  const o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+  o.setPeriodicWave(wave); o.frequency.setValueAtTime(f, at);
+  lp.type = 'lowpass'; lp.frequency.setValueAtTime(Math.min(f * 7, 12000), at); lp.frequency.exponentialRampToValueAtTime(Math.max(f * 2.2, 500), at + dur);
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(vel, at + 0.006);
+  g.gain.exponentialRampToValueAtTime(vel * sustain, at + Math.min(dur, 0.6));
+  g.gain.setValueAtTime(vel * sustain, at + dur);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur + 0.25);
+  o.connect(lp).connect(g).connect(master);
+  o.start(at); o.stop(at + dur + 0.3);
+  return o;
+}
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+function playEvent(e, at){
+  if (S.noMelody && !e.cue) return;
+  if (e.glide) {
+    const o = voiceNode(hz(e.glide[0]), at, e.dur, 0.5, 0.8);
+    e.glide.forEach((m, j) => { if (j) o.frequency.exponentialRampToValueAtTime(hz(m), at + e.dur * j / (e.glide.length - 1)); });
+  } else {
+    e.notes.forEach((m, j) => voiceNode(hz(m), at, e.dur, e.cue ? (j === 0 ? 0.55 : 0.32) : 0.6, 0.35));
+  }
+}
+function schedule(){
+  const horizon = ctx.currentTime + 0.35;
+  while (nextIdx < P.ev.length && t0 + P.ev[nextIdx].t < horizon) {
+    const e = P.ev[nextIdx++];
+    playEvent(e, Math.max(t0 + e.t, ctx.currentTime));
+  }
+}
+function silence(){
+  clearInterval(timer); timer = null;
+  if (master) { const g = master; g.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.04); setTimeout(() => g.disconnect(), 400); master = null; }
+}
+function keyAt(p){ let k = 0; P.keys.forEach((kk, i) => { if (kk.t <= p + 0.01) k = i; }); return k; }
+function begin(from){
+  if (P.empty) return;
+  ensureAudio(); ctx.resume(); silence();
+  master = ctx.createGain(); master.gain.value = 0.22; master.connect(ctx.destination);
+  t0 = ctx.currentTime + 0.08 - from;
+  nextIdx = P.ev.findIndex(e => e.t >= from - 0.001); if (nextIdx < 0) nextIdx = P.ev.length;
+  timer = setInterval(schedule, 40); schedule();
+  state = 'playing'; paint(); requestAnimationFrame(loop);
+}
+function play(){ if (state === 'playing') return; if (state !== 'paused') { stats = {}; note = null; } begin(state === 'paused' ? P.keys[keyAt(pos)].t : (state === 'done' ? 0 : pos)); }
+
+/* ---------- pitch feedback (microphone) ---------- */
+let mic = null, analyser = null, micBuf = null, micTimer = null, stats = {}, recent = [];
+let noiseFloor = 0.001;
+/* McLeod pitch method: normalized, so it works at low volume (singer farther from the phone) */
+function detectPitch(buf, sr){
+  const n = buf.length;
+  let rms = 0; for (let i = 0; i < n; i++) rms += buf[i] * buf[i]; rms = Math.sqrt(rms / n);
+  // adaptive gate: follow the room's quiet level, accept anything clearly above it
+  noiseFloor = rms < noiseFloor ? noiseFloor * 0.8 + rms * 0.2 : Math.min(0.004, noiseFloor * 1.002); // drops fast in quiet gaps, creeps up only slowly
+  if (rms < Math.max(0.001, noiseFloor * 2)) return null;
+  const maxLag = Math.min(n >> 1, Math.floor(sr / 65)), minLag = Math.floor(sr / 1200);
+  const nsdf = new Float32Array(maxLag + 2);
+  for (let lag = 0; lag <= maxLag + 1; lag++) {
+    let r = 0, m = 0;
+    for (let j = 0; j < n - lag; j++) { const a = buf[j], b = buf[j + lag]; r += a * b; m += a * a + b * b; }
+    nsdf[lag] = m > 0 ? 2 * r / m : 0;
+  }
+  // collect the highest point of each positive lobe
+  const peaks = []; let lag = 1;
+  while (lag < maxLag && nsdf[lag] > 0) lag++;
+  while (lag < maxLag) {
+    while (lag < maxLag && nsdf[lag] <= 0) lag++;
+    let bi = -1, bv = -1;
+    while (lag < maxLag && nsdf[lag] > 0) { if (nsdf[lag] > bv && nsdf[lag] >= nsdf[lag - 1] && nsdf[lag] >= nsdf[lag + 1]) { bv = nsdf[lag]; bi = lag; } lag++; }
+    if (bi >= minLag) peaks.push(bi);
+  }
+  if (!peaks.length) return null;
+  const top = Math.max(...peaks.map(i => nsdf[i]));
+  if (top < 0.6) return null; // not a clear tone (noise, breath, consonant)
+  const bi = peaks.find(i => nsdf[i] >= top * 0.88);
+  const a = (nsdf[bi - 1] + nsdf[bi + 1] - 2 * nsdf[bi]) / 2, b = (nsdf[bi + 1] - nsdf[bi - 1]) / 2;
+  const T0 = a ? bi - b / (2 * a) : bi;
+  const f = sr / T0; return f >= 65 && f <= 1200 ? f : null;
+}
+function targetNow(){
+  if (state !== 'playing') return null;
+  const p = ctx.currentTime - t0;
+  let cur = null; for (const e of P.ev) { if (e.t <= p) cur = e; else break; }
+  if (!cur || cur.cue || p > cur.t + cur.dur + (cur.dur < 0.25 ? 0.15 : 0.05)) return null; // short notes get extra time for a late voice
+  if (cur.glide) { const x = Math.min(1, (p - cur.t) / cur.dur) * (cur.glide.length - 1), j = Math.min(cur.glide.length - 2, Math.floor(x)); return { m: cur.glide[j] + (cur.glide[j + 1] - cur.glide[j]) * (x - j), k: cur.k, e: cur }; }
+  return { m: cur.notes[0], k: cur.k, e: cur };
+}
+const noteLabel = m => L === 'ko' ? korOct(m) : sci(m);
+/* smoothing: average the error over ~0.3 s (rides out vibrato), hold through short gaps, debounce the verdict */
+/* score per note, not per moment of sound: a note you skip counts as missed. A key sung with no sound at all is treated as a rest. */
+let note = null;
+function closeNote(){
+  const n = note; note = null;
+  if (!n || n.first > 0.25 || n.last < n.e.dur * 0.6) return; // paused, seeked or mic turned on midway: don't judge
+  if (!n.n && n.ticks < 4) return;                            // too fast to hear reliably
+  const s = stats[n.e.k] || (stats[n.e.k] = { hit:0, n:0, sung:0 });
+  s.n++; if (n.n) s.sung++;
+  s.hit += n.n ? Math.min(1, n.hit / Math.max(n.n, Math.ceil(n.ticks * 0.4))) : 0;
+}
+const sungKeys = () => Object.entries(stats).filter(([, s]) => s.sung);
+let errBuf = [], errEv = null, smC = null, gap = 0, shownCls = null, candCls = null, candN = 0;
+function micTick(){
+  analyser.getFloatTimeDomainData(micBuf);
+  const f = detectPitch(micBuf, ctx.sampleRate);
+  const raw = f ? 69 + 12 * Math.log2(f / 440) : null;
+  recent.push(raw); if (recent.length > 3) recent.shift();
+  const voiced = recent.filter(x => x !== null);
+  const m = voiced.length >= 2 ? [...voiced].sort((x, y) => x - y)[Math.floor(voiced.length / 2)] : null;
+  const tg = targetNow(), needle = $('needle'), vd = $('verdict');
+  if (!tg || tg.e !== errEv) { errBuf = []; errEv = tg ? tg.e : null; if (!tg) smC = null; }
+  if (note && (!tg || tg.e !== note.e)) closeNote();
+  if (tg) {
+    const at = ctx.currentTime - t0 - tg.e.t;
+    if (!note) note = { e:tg.e, first:at, last:at, ticks:0, n:0, hit:0 };
+    note.ticks++; note.last = at;
+  }
+  if (raw !== null && tg) {
+    let d = raw - tg.m; d -= 12 * Math.round(d / 12);
+    errBuf.push(d * 100); if (errBuf.length > 6) errBuf.shift();
+  }
+  gap = raw === null ? gap + 1 : 0;
+  if (gap > 6) { errBuf = []; smC = null; }           // silent for >0.3 s: let go
+  let cls = '', text = '';
+  if (tg && errBuf.length >= 2 && gap <= 6) {
+    const srt = [...errBuf].sort((x, y) => x - y), med = srt[srt.length >> 1];
+    const keep = errBuf.filter(c => Math.abs(c - med) <= 60), avg = keep.reduce((x, y) => x + y, 0) / keep.length;
+    smC = smC === null || Math.abs(avg - smC) > 80 ? avg : smC + 0.45 * (avg - smC);
+    const cents = Math.round(smC), a = Math.abs(cents);
+    const now = a <= 20 ? 'good' : a <= 50 ? (cents > 0 ? 'warnH' : 'warnL') : (cents > 0 ? 'offH' : 'offL');
+    if (now === candCls) candN++; else { candCls = now; candN = 1; }
+    if (shownCls === null || candN >= 3) shownCls = candCls;
+    cls = shownCls === 'good' ? 'good' : shownCls.slice(0, -1);
+    text = { good:t().inTune, warnH:t().sharpS, warnL:t().flatS, offH:t().sharp, offL:t().flat }[shownCls];
+    needle.style.left = (50 + Math.max(-50, Math.min(50, smC))) + '%';
+    if (raw !== null) { note.n++; if (a <= 35) note.hit++; }
+    $('myNote').textContent = t().myNote(noteLabel(Math.round(m ?? tg.m + smC / 100)), cents);
+  } else if (tg && smC !== null && gap <= 6) {
+    return; // between notes or a brief gap: keep the needle where it is
+  } else {
+    shownCls = null; candCls = null;
+    text = tg ? t().noVoice : t().waiting; needle.style.left = '50%';
+    $('myNote').textContent = m !== null ? t().myNote(noteLabel(Math.round(m)), null) : '';
+  }
+  needle.className = 'needle ' + cls; vd.className = 'verdict ' + cls; vd.textContent = text;
+  const tot = sungKeys().reduce((acc, [, s]) => (acc.h += s.hit, acc.n += s.n, acc), { h:0, n:0 });
+  $('score').textContent = tot.n > 3 ? t().scoreLive(Math.round(tot.h / tot.n * 100)) : '';
+}
+function scoreSummary(){
+  const entries = sungKeys();
+  const tot = entries.reduce((acc, [, s]) => (acc.h += s.hit, acc.n += s.n, acc), { h:0, n:0 });
+  if (!mic || tot.n < 4) return null;
+  const rate = ([, s]) => s.hit / s.n;
+  entries.sort((x, y) => rate(y) - rate(x));
+  const name = k => noteLabel(P.keys[+k].root);
+  const best = entries[0], worst = entries[entries.length - 1];
+  return t().doneScore(Math.round(tot.h / tot.n * 100), name(best[0]), entries.length > 1 && rate(worst) < 0.7 ? name(worst[0]) : '') + ' ' + t().sungOf(entries.length, P.keys.length);
+}
+function micMessage(key, err){ const el = $('micMsg'); el.dataset.key = key; el.textContent = t()[key]; el.classList.toggle('err', !!err); }
+async function micOn(){
+  if (!navigator.mediaDevices?.getUserMedia) { micMessage('micNoSupport', true); return; }
+  ensureAudio(); ctx.resume();
+  try {
+    mic = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:false, autoGainControl:true } });
+  } catch (e) {
+    const blocked = document.permissionsPolicy?.allowsFeature?.('microphone') === false || document.featurePolicy?.allowsFeature?.('microphone') === false || e.name === 'SecurityError';
+    micMessage(blocked || e.name !== 'NotAllowedError' ? 'micBlocked' : 'micDenied', true); mic = null; return;
+  }
+  analyser = ctx.createAnalyser(); analyser.fftSize = 2048; micBuf = new Float32Array(analyser.fftSize);
+  ctx.createMediaStreamSource(mic).connect(analyser);
+  micTimer = setInterval(micTick, 50);
+  $('meter').hidden = false; micMessage('micListening'); renderMic();
+}
+function micOff(){
+  clearInterval(micTimer); micTimer = null;
+  if (mic) mic.getTracks().forEach(tr => tr.stop());
+  mic = null; $('meter').hidden = true; micMessage('micHint'); renderMic();
+}
+function renderMic(){
+  $('micBtn').textContent = mic ? t().micOff : t().micOn;
+  $('micBtn').setAttribute('aria-pressed', !!mic);
+  $('noMelody').checked = !!S.noMelody;
+  const el = $('micMsg'); el.textContent = t()[el.dataset.key || 'micHint'];
+}
+function pause(){ if (state !== 'playing') return; pos = ctx.currentTime - t0; silence(); state = 'paused'; paint(); }
+function toIdle(){ silence(); P = buildPlan(); state = 'idle'; pos = 0; paint(); }
+function seekKey(k){
+  if (P.empty) return;
+  pos = P.keys[k].t;
+  if (state === 'playing') begin(pos); else { state = 'paused'; paint(); }
+}
+
+/* ---------- screen & leaving the app ---------- */
+let wake = null, wakeAsk = false; // keep the screen on while practicing
+async function wakeOn(){
+  if (wake || wakeAsk || !navigator.wakeLock) return;
+  wakeAsk = true;
+  try { const w = await navigator.wakeLock.request('screen'); wake = w; w.addEventListener('release', () => { if (wake === w) wake = null; }); } catch(e) {}
+  wakeAsk = false;
+  if (state !== 'playing') wakeOff();
+}
+function wakeOff(){ const w = wake; wake = null; if (w) w.release().catch(() => {}); }
+function leave(){ pause(); if (mic) { micOff(); micMessage('micAway'); } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) leave(); });
+window.addEventListener('pagehide', leave);
+
+/* ---------- stage drawing ---------- */
+let lampSig = '';
+function renderLamps(seg, root){
+  const sig = L + seg + ':' + root; if (sig === lampSig) return; lampSig = sig;
+  const pat = P.segs[seg].ex.pat;
+  $('lamps').innerHTML = pat.map(iv => `<span class="lamp"><b>${LAMP[L][(root + iv) % 12]}</b><small>${sci(root + iv)}</small></span>`).join('');
+}
+function showAt(p, live){
+  if (P.empty) return;
+  const k = keyAt(p), key = P.keys[k], seg = P.segs[key.seg];
+  $('keyK').textContent = keyBig(key.root);
+  $('keySci').textContent = 'KEY' + (keySmall(key.root) ? ' · ' + keySmall(key.root) : '');
+  $('exName').textContent = (P.segs.length > 1 ? `${key.seg + 1}/${P.segs.length} · ` : '') + exName(seg.ex);
+  renderLamps(key.seg, key.root);
+  let on = -1, cueNow = false;
+  if (live) {
+    let cur = null; for (const e of P.ev) { if (e.t <= p) cur = e; else break; }
+    if (cur) {
+      cueNow = !!cur.cue;
+      if (!cur.cue && p < cur.t + cur.dur) on = cur.glide ? Math.round((p - cur.t) / cur.dur * (cur.glide.length - 1)) : cur.i;
+    }
+  }
+  document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('on', i === on));
+  const seek = $('seek'); if (!scrubbing) seek.value = p;
+  seek.setAttribute('aria-valuetext', fmt(p) + ' · ' + keyBig(key.root));
+  $('trackPos').textContent = t().keys(k + 1, P.keys.length);
+  $('trackTime').textContent = fmt(p) + ' / ' + fmt(P.total);
+  if (live) {
+    const nk = P.keys[k + 1], lastEv = P.ev.filter(e => e.k === k).pop();
+    if (nk && nk.seg !== key.seg && p > lastEv.t + lastEv.dur + 0.2) $('cue').textContent = t().nextUp(exName(P.segs[nk.seg].ex), Math.max(1, Math.ceil(nk.t - p)));
+    else $('cue').textContent = cueNow ? (exTip(seg.ex) || t().cueChord) : t().cueSing;
+  }
+}
+function loop(){
+  if (state !== 'playing') return;
+  const p = ctx.currentTime - t0;
+  if (p >= P.total) { silence(); state = 'done'; pos = 0; paint(); return; }
+  showAt(scrubbing ? scrubVal : p, !scrubbing); // while dragging, preview the dragged spot; audio keeps playing
+  requestAnimationFrame(loop);
+}
+function paint(){
+  state === 'playing' ? wakeOn() : wakeOff();
+  const st = $('stage');
+  st.classList.toggle('playing', state === 'playing');
+  st.classList.toggle('paused', state === 'paused');
+  $('seek').max = P.empty ? 0 : P.total;
+  $('liveText').textContent = t().st[state];
+  $('playBtn').textContent = state === 'playing' ? t().pause : state === 'paused' ? t().resume : state === 'done' ? t().again : t().start;
+  $('playBtn').disabled = !!P.empty;
+  if (P.empty) {
+    $('keyK').textContent = '—'; $('keySci').textContent = ''; $('lamps').innerHTML = ''; lampSig = '';
+    $('exName').textContent = ''; $('cue').textContent = t().cueEmpty;
+    $('trackPos').textContent = t().keysNone; $('trackTime').textContent = '0:00';
+    return;
+  }
+  if (state !== 'playing') {
+    showAt(pos, false);
+    $('cue').textContent = state === 'paused' ? t().cuePaused : state === 'done' ? (scoreSummary() || t().cueDone) : t().cueIdle;
+  }
+}
+
+/* ---------- controls ---------- */
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function exItem(e, pressed){
+  const custom = e.id.startsWith('my-'), tip = exTip(e);
+  return `<div class="item" role="button" tabindex="0" data-id="${e.id}" aria-pressed="${pressed}">
+    <span class="row1"><span class="name">${esc(exName(e))}</span><span class="meta">${e.badge ? `<span class="pill brass">${t().badge}</span>` : ''}<span class="pill">${custom ? t().mine : t().cats[e.cat]}</span></span></span>
+    <span class="solf">${solfOf(e.pat)}</span>
+    ${tip ? `<span class="tip">${esc(tip)}</span>` : ''}
+    ${custom ? `<span><button class="del" data-del="${e.id}">${t().del}</button></span>` : ''}
+  </div>`;
+}
+function renderSingle(){
+  const cats = [['all', t().all], ...Object.entries(t().cats), ['mine', t().mine]];
+  const list = allEx().filter(e => S.cat === 'all' || (S.cat === 'mine' ? e.id.startsWith('my-') : e.cat === S.cat));
+  $('panelSingle').innerHTML = `<div class="filters">${cats.map(([k, v]) => `<button data-cat="${k}" aria-pressed="${S.cat === k}">${v}</button>`).join('')}</div>`
+    + (list.length ? list.map(e => exItem(e, S.mode === 'single' && S.ex === e.id)).join('') : `<div class="empty">${t().emptyMine}</div>`);
+}
+function routineTime(r){
+  const keep = { mode:S.mode, routine:S.routine }; S.mode = 'routine'; S.routine = r.id;
+  const p = buildPlan(); Object.assign(S, keep);
+  return p.empty ? t().narrow : t().approx(fmt(p.total));
+}
+function renderRoutine(){
+  $('panelRoutine').innerHTML = allRoutines().filter(r => r.id !== 'mr-draft').map(r => `<div class="item" role="button" tabindex="0" data-routine="${r.id}" aria-pressed="${S.mode === 'routine' && S.routine === r.id}">
+    <span class="row1"><span class="name">${esc(routineName(r))}</span><span class="meta">${isMine(r) ? `<span class="pill brass">${t().myTag}</span>` : ''}<span class="pill">${routineTime(r)}</span></span></span>
+    ${isMine(r) ? '' : `<span class="tip">${t().routines[r.id][1]}</span>`}
+    <span class="solf">${r.items.map(id => esc(exName(exById(id)))).filter(Boolean).join(' → ')}</span>
+    ${isMine(r) ? `<span><button class="del" data-delr="${r.id}">${t().del}</button></span>` : ''}</div>`).join('');
+}
+const PAD = [0,2,4,5,7,9,11,12,14,16];
+let draft = [], combo = [];
+function renderBuild(){
+  const keepName = $('bName') ? $('bName').value : '', keepC = $('cName') ? $('cName').value : '';
+  const pickable = allEx().filter(e => e.id !== 'my-draft');
+  $('panelBuild').innerHTML = `<div class="builder">
+    <div class="bhead">${t().comboTitle}</div>
+    <p class="bhint">${t().comboHint}</p>
+    <div class="slots">${[0,1,2].map(i => combo[i]
+      ? `<button class="slot filled" data-slot="${i}"><b>${i + 1}</b><span>${esc(exName(exById(combo[i])))}</span></button>`
+      : `<div class="slot empty"><b>${i + 1}</b><span>${t().slotEmpty}</span></div>`).join('')}</div>
+    <div class="exlist">${pickable.map(e => `<button data-add="${e.id}" ${combo.length >= 3 ? 'disabled' : ''}>${esc(exName(e))}</button>`).join('')}</div>
+    <div class="brow"><button class="btn" id="cTry" ${combo.length >= 2 ? '' : 'disabled'}>${t().tryIt}</button></div>
+    <div class="brow"><input id="cName" maxlength="20" placeholder="${esc(t().comboNamePh)}"><button class="btn primary" id="cSave" ${combo.length >= 2 ? '' : 'disabled'}>${t().save}</button></div>
+  </div>
+  <div class="builder">
+    <div class="bhead">${t().patTitle}</div>
+    <div class="seq">${draft.length ? draft.map(iv => `<span>${degName(iv)}</span>`).join('') : `<em>${t().seqHint}</em>`}</div>
+    <div class="pad">${PAD.map(iv => `<button data-iv="${iv}">${degName(iv)}<small>${iv >= 12 ? t().octUp : '&nbsp;'}</small></button>`).join('')}</div>
+    <div class="brow"><button class="btn" id="bUndo" ${draft.length ? '' : 'disabled'}>${t().undo}</button><button class="btn" id="bClear" ${draft.length ? '' : 'disabled'}>${t().clear}</button><button class="btn" id="bTry" ${draft.length >= 2 ? '' : 'disabled'}>${t().tryIt}</button></div>
+    <div class="brow"><input id="bName" maxlength="20" placeholder="${esc(t().namePh)}"><button class="btn primary" id="bSave" ${draft.length >= 2 ? '' : 'disabled'}>${t().save}</button></div>
+  </div>`;
+  $('bName').value = keepName; $('cName').value = keepC;
+}
+function renderStatic(){
+  document.documentElement.lang = L;
+  document.querySelectorAll('[data-t]').forEach(el => el.textContent = t()[el.dataset.t]);
+  $('lang').value = L;
+  $('stage').setAttribute('aria-label', t().stageAria);
+  $('seek').setAttribute('aria-label', t().seekAria);
+  ['lowDown','lowUp','topDown','topUp'].forEach(id => $(id).setAttribute('aria-label', t()[id]));
+}
+function renderControls(){
+  const chip = v => `<button class="chip" data-id="${v.id}" aria-pressed="${S.voice === v.id}"><b>${t().voices[v.id][0]}</b><small>${sci(v.low)}–${sci(v.top)}</small></button>`;
+  $('voicesM').innerHTML = VOICES.filter(v => v.g === 'm').map(chip).join('');
+  $('voicesF').innerHTML = VOICES.filter(v => v.g === 'f').map(chip).join('');
+  document.querySelectorAll('#modeTabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.v === tab));
+  $('panelSingle').hidden = tab !== 'single'; $('panelRoutine').hidden = tab !== 'routine'; $('panelBuild').hidden = tab !== 'build';
+  renderSingle(); renderRoutine(); if (tab === 'build') renderBuild();
+  $('lowK').textContent = keyBig(S.low); $('lowS').textContent = L === 'ko' ? sci(S.low) : keySmall(S.low);
+  $('topK').textContent = keyBig(S.top); $('topS').textContent = L === 'ko' ? sci(S.top) : keySmall(S.top);
+  showSpeed(S.speed);
+  document.querySelectorAll('#dir button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === S.dir));
+  const sk = P.skipped || [];
+  $('warn').hidden = !sk.length && !P.empty;
+  $('warn').textContent = P.empty ? t().warnNarrow : sk.length ? t().warnSkipped(sk.map(exName).join(', ')) : '';
+  $('summary').textContent = P.empty ? '' : t().summary(keyBig(S.low), keyBig(P.hi), P.keys.length, fmt(P.total));
+}
+function change(fn){ fn(); persist(); toIdle(); renderControls(); }
+
+$('lang').onchange = e => { L = S.lang = e.target.value; persist(); lampSig = ''; renderStatic(); renderControls(); renderMic(); paint(); };
+$('stage').addEventListener('click', e => { if (e.target.closest('#track')) return; state === 'playing' ? pause() : play(); });
+$('stage').addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.target.closest('#track')) { e.preventDefault(); state === 'playing' ? pause() : play(); } });
+/* scrubbing: drag shows time + key in a bubble; release jumps to the start of that key (its chord) */
+let scrubbing = false, scrubVal = 0;
+function scrubTipAt(v){
+  const seek = $('seek'), tip = $('scrubTip'), max = +seek.max || 1;
+  tip.innerHTML = `${fmt(v)}<small>${keyBig(P.keys[keyAt(v)].root)}</small>`;
+  const w = seek.clientWidth, thumb = 16, x = (v / max) * (w - thumb) + thumb / 2, half = tip.offsetWidth / 2;
+  tip.style.left = Math.min(Math.max(x, half), w - half) + 'px';
+  tip.classList.add('show');
+}
+function scrubTo(v){
+  scrubbing = true; scrubVal = v;
+  $('track').classList.add('scrubbing'); scrubTipAt(v);
+  if (state === 'playing') showAt(v, false);
+  else { pos = v; state = 'paused'; paint(); }
+}
+function endScrub(){
+  if (!scrubbing) return;
+  scrubbing = false;
+  $('track').classList.remove('scrubbing'); $('scrubTip').classList.remove('show');
+  seekKey(keyAt(scrubVal));
+}
+$('seek').addEventListener('input', e => { if (!P.empty) scrubTo(+e.target.value); });
+$('seek').addEventListener('change', endScrub);
+['pointerup', 'pointercancel', 'blur'].forEach(ev => $('seek').addEventListener(ev, endScrub));
+$('seek').addEventListener('keydown', e => { // arrow keys still step one key at a time
+  if (P.empty) return;
+  const cur = keyAt(state === 'playing' ? ctx.currentTime - t0 : pos), last = P.keys.length - 1;
+  const to = { ArrowLeft: cur - 1, ArrowDown: cur - 1, PageDown: cur - 1, ArrowRight: cur + 1, ArrowUp: cur + 1, PageUp: cur + 1, Home: 0, End: last }[e.key];
+  if (to === undefined) return;
+  e.preventDefault(); seekKey(Math.min(Math.max(to, 0), last));
+});
+$('playBtn').onclick = () => state === 'playing' ? pause() : play();
+$('resetBtn').onclick = () => toIdle();
+['voicesM','voicesF'].forEach(id => $(id).onclick = e => { const b = e.target.closest('.chip'); if (!b) return;
+  change(() => { const v = VOICES.find(x => x.id === b.dataset.id); S.voice = v.id; S.low = v.low; S.top = v.top; }); });
+$('micBtn').onclick = () => mic ? micOff() : micOn();
+$('noMelody').onchange = e => { S.noMelody = e.target.checked; persist(); };
+$('modeTabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.v; renderControls(); };
+function pick(e){
+  const delr = e.target.closest('[data-delr]');
+  if (delr) { e.stopPropagation(); change(() => { S.myRoutines = S.myRoutines.filter(r => r.id !== delr.dataset.delr); if (S.routine === delr.dataset.delr) { S.routine = 'light'; } }); return; }
+  const del = e.target.closest('[data-del]');
+  if (del) { e.stopPropagation(); change(() => { S.custom = S.custom.filter(c => c.id !== del.dataset.del); if (S.ex === del.dataset.del) S.ex = 'arp'; }); return; }
+  const cat = e.target.closest('[data-cat]'); if (cat) { S.cat = cat.dataset.cat; persist(); renderSingle(); return; }
+  const it = e.target.closest('.item'); if (!it) return;
+  if (it.dataset.routine) change(() => { S.mode = 'routine'; S.routine = it.dataset.routine; });
+  else change(() => { S.mode = 'single'; S.ex = it.dataset.id; });
+}
+['panelSingle','panelRoutine'].forEach(id => {
+  $(id).addEventListener('click', pick);
+  $(id).addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('item')) { e.preventDefault(); pick(e); } });
+});
+$('panelBuild').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.add) { if (combo.length < 3) combo.push(b.dataset.add); }
+  else if (b.dataset.slot !== undefined) combo.splice(+b.dataset.slot, 1);
+  else if (b.id === 'cTry') { if (combo.length < 2) return;
+    S.myRoutines = S.myRoutines.filter(r => r.id !== 'mr-draft').concat({ id:'mr-draft', name:'', items:combo.slice() });
+    change(() => { S.mode = 'routine'; S.routine = 'mr-draft'; }); begin(0); return; }
+  else if (b.id === 'cSave') { if (combo.length < 2) return;
+    const name = ($('cName').value || '').trim() || t().myRoutineN(S.myRoutines.filter(r => r.id !== 'mr-draft').length + 1);
+    const item = { id:'mr-' + Date.now(), name, items:combo.slice() };
+    combo = []; $('cName').value = ''; tab = 'routine';
+    change(() => { S.myRoutines = S.myRoutines.filter(r => r.id !== 'mr-draft').concat(item); S.mode = 'routine'; S.routine = item.id; });
+    return; }
+  else if (b.dataset.iv !== undefined) { if (draft.length < 16) draft.push(+b.dataset.iv); }
+  else if (b.id === 'bUndo') draft.pop();
+  else if (b.id === 'bClear') draft = [];
+  else if (b.id === 'bTry') { if (draft.length < 2) return;
+    const tmp = { id:'my-draft', name:'', pat:draft.slice(), cat:'mine' };
+    S.custom = S.custom.filter(c => c.id !== 'my-draft').concat(tmp);
+    change(() => { S.mode = 'single'; S.ex = 'my-draft'; }); begin(0); return; }
+  else if (b.id === 'bSave') { if (draft.length < 2) return;
+    const name = ($('bName').value || '').trim() || t().myN(S.custom.filter(c => c.id !== 'my-draft').length + 1);
+    const item = { id:'my-' + Date.now(), name, pat:draft.slice(), cat:'mine' };
+    draft = []; $('bName').value = ''; tab = 'single';
+    change(() => { S.custom = S.custom.filter(c => c.id !== 'my-draft').concat(item); S.mode = 'single'; S.ex = item.id; S.cat = 'mine'; });
+    return; }
+  renderBuild();
+});
+/* speed: dragging updates the label and estimated time; releasing applies it, keeping the current key */
+function showSpeed(x){
+  $('speed').value = x; $('speedVal').textContent = fmtSpeed(x);
+  $('speed').setAttribute('aria-valuetext', fmtSpeed(x));
+  document.querySelectorAll('#speedTicks button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === x));
+}
+function previewSpeed(x){
+  const keep = S.speed; S.speed = x; const pl = buildPlan(); S.speed = keep;
+  $('speedVal').textContent = fmtSpeed(x);
+  document.querySelectorAll('#speedTicks button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === x));
+  $('summary').textContent = pl.empty ? '' : t().summary(keyBig(S.low), keyBig(pl.hi), pl.keys.length, fmt(pl.total));
+}
+function applySpeed(x){
+  x = clampSpeed(x); if (x === S.speed) { showSpeed(x); return; }
+  const was = state, k = was === 'playing' ? keyAt(ctx.currentTime - t0) : keyAt(pos);
+  S.speed = x; persist();
+  if (was === 'playing' || was === 'paused') {
+    P = buildPlan();
+    if (P.empty) toIdle();
+    else { pos = P.keys[Math.min(k, P.keys.length - 1)].t; if (was === 'playing') begin(pos); else paint(); }
+  } else toIdle();
+  renderControls();
+}
+$('speed').addEventListener('input', e => previewSpeed(clampSpeed(+e.target.value)));
+$('speed').addEventListener('change', e => applySpeed(+e.target.value));
+$('speedTicks').onclick = e => { const b = e.target.closest('button'); if (b) applySpeed(+b.dataset.v); };
+$('dir').onclick = e => { const b = e.target.closest('button'); if (b) change(() => S.dir = b.dataset.v); };
+$('lowDown').onclick = () => change(() => S.low = Math.max(36, S.low - 1));
+$('lowUp').onclick = () => change(() => S.low = Math.min(S.top, S.low + 1));
+$('topDown').onclick = () => change(() => S.top = Math.max(S.low, S.top - 1));
+$('topUp').onclick = () => change(() => S.top = Math.min(91, S.top + 1));
+
+if (!exById(S.ex)) S.ex = 'arp';
+if (!allRoutines().some(r => r.id === S.routine)) S.routine = 'light';
+P = buildPlan(); renderStatic(); renderControls(); renderMic(); paint();
+</script>
+
+</body></html>
