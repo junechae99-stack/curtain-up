@@ -166,6 +166,7 @@ details.manual .range .step{background:var(--bg)}
 .micbtn{border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:700;cursor:pointer}
 .micbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .check{display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer}
+.check small{display:block;color:var(--muted);font-size:12px}
 .check input{margin-top:3px;accent-color:var(--accent)}
 .micmsg{font-size:12px;color:var(--muted);margin:0}
 .micmsg.err{color:var(--accent);font-weight:500}
@@ -215,7 +216,7 @@ details.manual .range .step{background:var(--bg)}
     <h2 data-t="hMic"></h2>
     <div class="micbox">
       <button class="micbtn" id="micBtn" aria-pressed="false"></button>
-      <label class="check"><input type="checkbox" id="noMelody"><span data-t="noMelody"></span></label>
+      <label class="check"><input type="checkbox" id="noMelody"><span><span data-t="noMelody"></span><small data-t="noMelodyHint"></small></span></label>
       <div class="micvol" id="micVolBox" hidden><div class="speed-head"><label class="lbl" for="micVol" data-t="micVol"></label><b id="micVolVal"></b></div>
         <input class="speed-range" id="micVol" type="range" min="0.1" max="1" step="0.05"></div>
       <p class="micmsg" id="micMsg"></p>
@@ -394,7 +395,7 @@ es:{ tagline:'Calienta la voz antes de cantar', hVoice:'Tu voz', hMode:'Modo de 
 const EXTRA = {
 ko:{ male:'남성', female:'여성', voiceHint:'고르기만 하면 그 목소리의 평균 음역으로 자동 설정돼요.', manual:'음역 직접 조절 (선택)',
   hMic:'음정 피드백', micOn:'🎤 음정 피드백 켜기', micOff:'🎤 음정 피드백 끄기',
-  micHint:'이어폰을 끼면 피아노 소리가 마이크에 섞이지 않아 더 정확해요.', noMelody:'이어폰이 없어요 (멜로디는 소리 없이 화면으로만 안내)',
+  micHint:'이어폰을 끼면 피아노 소리가 마이크에 섞이지 않아 더 정확해요.', noMelody:'멜로디 소리 끄기 (화음만 듣고 불러 보기)', noMelodyHint:'이어폰이 없을 때 켜면 더 정확해요',
   micListening:'마이크가 켜졌어요. 연습을 시작하고 따라 불러 보세요.', micBlocked:'이 화면에서는 보안상 마이크를 쓸 수 없어요. 크롬이나 사파리에서 링크를 직접 열어 주세요.',
   micDenied:'마이크 권한이 거부됐어요. 브라우저 주소창의 사이트 설정에서 마이크를 허용해 주세요.', micNoSupport:'이 브라우저는 마이크를 지원하지 않아요.',
   inTune:'정확해요', sharpS:'조금 높아요', flatS:'조금 낮아요', sharp:'높아요', flat:'낮아요', noVoice:'소리를 내 주세요', waiting:'다음 음을 기다리는 중',
@@ -403,7 +404,7 @@ ko:{ male:'남성', female:'여성', voiceHint:'고르기만 하면 그 목소�
   voices:{ tenor:['테너','높은 남성'], baritone:['바리톤','중간 남성'], bass:['베이스','낮은 남성'], soprano:['소프라노','높은 여성'], mezzo:['메조소프라노','중간 여성'], alto:['알토','낮은 여성'] } },
 en:{ male:'Male', female:'Female', voiceHint:'Pick one and the range is set to that voice’s typical range.', manual:'Adjust range yourself (optional)',
   hMic:'Pitch feedback', micOn:'🎤 Turn on pitch feedback', micOff:'🎤 Turn off pitch feedback',
-  micHint:'Use earphones so the piano doesn’t leak into the mic.', noMelody:'No earphones (melody is shown on screen, not played)',
+  micHint:'Use earphones so the piano doesn’t leak into the mic.', noMelody:'Mute the melody (sing from the chord alone)', noMelodyHint:'More accurate when you have no earphones',
   micListening:'Mic is on. Start practicing and sing along.', micBlocked:'The microphone is blocked on this screen for security. Open the link directly in Chrome or Safari.',
   micDenied:'Microphone access was denied. Allow it in your browser’s site settings.', micNoSupport:'This browser doesn’t support the microphone.',
   inTune:'In tune', sharpS:'A little sharp', flatS:'A little flat', sharp:'Sharp', flat:'Flat', noVoice:'Sing a note', waiting:'Waiting for the next note',
@@ -412,7 +413,7 @@ en:{ male:'Male', female:'Female', voiceHint:'Pick one and the range is set to t
   voices:{ tenor:['Tenor','High male'], baritone:['Baritone','Middle male'], bass:['Bass','Low male'], soprano:['Soprano','High female'], mezzo:['Mezzo','Middle female'], alto:['Alto','Low female'] } },
 ja:{ male:'男性', female:'女性', voiceHint:'選ぶだけでその声種の平均的な音域に自動設定されます。', manual:'音域を自分で調整(任意)',
   hMic:'音程フィードバック', micOn:'🎤 音程フィードバックをオン', micOff:'🎤 音程フィードバックをオフ',
-  micHint:'イヤホンを使うとピアノの音がマイクに入らず、より正確です。', noMelody:'イヤホンなし(メロディは音を出さず画面だけで案内)',
+  micHint:'イヤホンを使うとピアノの音がマイクに入らず、より正確です。', noMelody:'メロディの音を消す(和音だけ聴いて歌ってみる)', noMelodyHint:'イヤホンがないときにオンにすると、より正確です',
   micListening:'マイクがオンになりました。練習を始めて一緒に歌ってください。', micBlocked:'この画面ではセキュリティ上マイクを使えません。ChromeかSafariでリンクを直接開いてください。',
   micDenied:'マイクの許可が拒否されました。ブラウザのサイト設定で許可してください。', micNoSupport:'このブラウザはマイクに対応していません。',
   inTune:'正確です', sharpS:'少し高い', flatS:'少し低い', sharp:'高い', flat:'低い', noVoice:'声を出してください', waiting:'次の音を待っています',
@@ -421,7 +422,7 @@ ja:{ male:'男性', female:'女性', voiceHint:'選ぶだけでその声種の�
   voices:{ tenor:['テノール','高い男声'], baritone:['バリトン','中間の男声'], bass:['バス','低い男声'], soprano:['ソプラノ','高い女声'], mezzo:['メゾソプラノ','中間の女声'], alto:['アルト','低い女声'] } },
 zh:{ male:'男声', female:'女声', voiceHint:'选好声部就会自动设置为该声部的平均音域。', manual:'手动调整音域(可选)',
   hMic:'音准反馈', micOn:'🎤 开启音准反馈', micOff:'🎤 关闭音准反馈',
-  micHint:'戴耳机可以避免钢琴声混进麦克风,结果更准确。', noMelody:'没有耳机(旋律不发声,只在屏幕上提示)',
+  micHint:'戴耳机可以避免钢琴声混进麦克风,结果更准确。', noMelody:'关闭旋律声(只听和弦唱唱看)', noMelodyHint:'没有耳机时打开会更准确',
   micListening:'麦克风已开启。开始练习并跟着唱吧。', micBlocked:'出于安全原因,此画面无法使用麦克风。请直接用 Chrome 或 Safari 打开链接。',
   micDenied:'麦克风权限被拒绝。请在浏览器的网站设置中允许。', micNoSupport:'此浏览器不支持麦克风。',
   inTune:'很准', sharpS:'稍微偏高', flatS:'稍微偏低', sharp:'偏高', flat:'偏低', noVoice:'请发声', waiting:'等待下一个音',
@@ -430,7 +431,7 @@ zh:{ male:'男声', female:'女声', voiceHint:'选好声部就会自动设置�
   voices:{ tenor:['男高音','高音男声'], baritone:['男中音','中音男声'], bass:['男低音','低音男声'], soprano:['女高音','高音女声'], mezzo:['女中音','中音女声'], alto:['女低音','低音女声'] } },
 es:{ male:'Hombre', female:'Mujer', voiceHint:'Elige una y el registro se ajusta al promedio de esa voz.', manual:'Ajustar el registro a mano (opcional)',
   hMic:'Afinación en vivo', micOn:'🎤 Activar afinación', micOff:'🎤 Desactivar afinación',
-  micHint:'Usa auriculares para que el piano no entre en el micrófono.', noMelody:'Sin auriculares (la melodía se muestra en pantalla, sin sonido)',
+  micHint:'Usa auriculares para que el piano no entre en el micrófono.', noMelody:'Silenciar la melodía (canta solo con el acorde)', noMelodyHint:'Más preciso si no tienes auriculares',
   micListening:'Micrófono activo. Empieza a practicar y canta.', micBlocked:'Por seguridad, el micrófono está bloqueado en esta pantalla. Abre el enlace directamente en Chrome o Safari.',
   micDenied:'Se denegó el acceso al micrófono. Permítelo en los ajustes del sitio del navegador.', micNoSupport:'Este navegador no admite el micrófono.',
   inTune:'Afinado', sharpS:'Un poco alto', flatS:'Un poco bajo', sharp:'Alto', flat:'Bajo', noVoice:'Canta una nota', waiting:'Esperando la siguiente nota',
