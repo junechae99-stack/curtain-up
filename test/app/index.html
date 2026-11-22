@@ -216,6 +216,8 @@ details.manual .range .step{background:var(--bg)}
     <div class="micbox">
       <button class="micbtn" id="micBtn" aria-pressed="false"></button>
       <label class="check"><input type="checkbox" id="noMelody"><span data-t="noMelody"></span></label>
+      <div class="micvol" id="micVolBox" hidden><div class="speed-head"><label class="lbl" for="micVol" data-t="micVol"></label><b id="micVolVal"></b></div>
+        <input class="speed-range" id="micVol" type="range" min="0.1" max="1" step="0.05"></div>
       <p class="micmsg" id="micMsg"></p>
     </div>
   </section>
@@ -450,7 +452,7 @@ es:{ comboTitle:'Combinar ejercicios (hasta 3)', comboHint:'Toca ejercicios para
 };
 const SPEED_T = { ko:{ speedLbl:'빠르기 (드래그해서 조절)' }, en:{ speedLbl:'Speed (drag to adjust)' }, ja:{ speedLbl:'速さ(ドラッグで調整)' }, zh:{ speedLbl:'速度(拖动调整)' }, es:{ speedLbl:'Velocidad (arrastra para ajustar)' } };
 const VOICE_T = { ko:{ male:'남자', female:'여자' }, en:{ male:'Men', female:'Women' }, ja:{ male:'男性', female:'女性' }, zh:{ male:'男生', female:'女生' }, es:{ male:'Hombres', female:'Mujeres' } };
-const AWAY_T = { ko:{ audioStuck:'소리가 멈췄어요. 재생을 한 번 더 눌러 주세요', micAway:'화면을 벗어나서 마이크를 껐어요. 다시 켜려면 위 버튼을 눌러 주세요.' }, en:{ audioStuck:'The sound stopped. Tap play once more', micAway:'You left this screen, so the mic was turned off. Tap the button above to turn it back on.' }, ja:{ audioStuck:'音が止まりました。もう一度再生を押してください', micAway:'画面を離れたのでマイクをオフにしました。上のボタンでもう一度オンにできます。' }, zh:{ audioStuck:'声音停止了，请再按一次播放', micAway:'你离开了此画面,麦克风已关闭。点击上方按钮可重新开启。' }, es:{ audioStuck:'El sonido se detuvo. Toca reproducir otra vez', micAway:'Saliste de la pantalla y se apagó el micrófono. Toca el botón de arriba para activarlo.' } };
+const AWAY_T = { ko:{ micVol:'마이크 켰을 때 피아노 소리', audioStuck:'소리가 멈췄어요. 재생을 한 번 더 눌러 주세요', micAway:'화면을 벗어나서 마이크를 껐어요. 다시 켜려면 위 버튼을 눌러 주세요.' }, en:{ micVol:'Piano volume while the mic is on', audioStuck:'The sound stopped. Tap play once more', micAway:'You left this screen, so the mic was turned off. Tap the button above to turn it back on.' }, ja:{ micVol:'マイク使用中のピアノ音量', audioStuck:'音が止まりました。もう一度再生を押してください', micAway:'画面を離れたのでマイクをオフにしました。上のボタンでもう一度オンにできます。' }, zh:{ micVol:'麦克风开启时的钢琴音量', audioStuck:'声音停止了，请再按一次播放', micAway:'你离开了此画面,麦克风已关闭。点击上方按钮可重新开启。' }, es:{ micVol:'Volumen del piano con micrófono', audioStuck:'El sonido se detuvo. Toca reproducir otra vez', micAway:'Saliste de la pantalla y se apagó el micrófono. Toca el botón de arriba para activarlo.' } };
 const SCORE_T = { ko:{ octLow:'한 옥타브 낮아요', octHigh:'한 옥타브 높아요', octKeys:n=>`옥타브가 다르게 부른 키가 ${n}개 있어요.`, sungOf:(a,b)=>`(부른 키 ${a}/${b})` }, en:{ octLow:'An octave low', octHigh:'An octave high', octKeys:n=>`${n} keys were sung in a different octave.`, sungOf:(a,b)=>`(sang ${a} of ${b} keys)` }, ja:{ octLow:'1オクターブ低いです', octHigh:'1オクターブ高いです', octKeys:n=>`オクターブ違いで歌ったキーが${n}個あります。`, sungOf:(a,b)=>`(歌ったキー ${a}/${b})` }, zh:{ octLow:'低了一个八度', octHigh:'高了一个八度', octKeys:n=>`有 ${n} 个调唱成了别的八度。`, sungOf:(a,b)=>`(唱了 ${a}/${b} 个调)` }, es:{ octLow:'Una octava abajo', octHigh:'Una octava arriba', octKeys:n=>`Cantaste ${n} tonos en otra octava.`, sungOf:(a,b)=>`(cantaste ${a} de ${b} tonos)` } };
 Object.keys(EXTRA).forEach(l => Object.assign(T[l], EXTRA[l], COMBO[l], SPEED_T[l], VOICE_T[l], SCORE_T[l], AWAY_T[l]));
 /* note naming per language */
@@ -521,7 +523,7 @@ const exTip = e => e.id.startsWith('my-') ? '' : t().ex[e.id][1];
 const BASE_NOTE = 0.42; // seconds per note at 1x (the old "medium")
 const clampSpeed = x => Math.min(2, Math.max(0.5, Math.round(x * 20) / 20));
 const fmtSpeed = x => x.toFixed(2).replace(/0$/, '') + '×';
-const DEFAULT = { voice:'tenor', mode:'single', ex:'five', routine:'light', cat:'all', low:48, top:72, speed:1, dir:'both', custom:[], myRoutines:[], lang:null, noMelody:false };
+const DEFAULT = { voice:'tenor', mode:'single', ex:'five', routine:'light', cat:'all', low:48, top:72, speed:1, dir:'both', custom:[], myRoutines:[], lang:null, noMelody:false, micVol:null };
 let S = { ...DEFAULT }, saved = {};
 try { saved = JSON.parse(localStorage.getItem('curtainup-test') || '{}') || {}; S = { ...DEFAULT, ...saved }; } catch(e) {}
 if (saved.tempo && !saved.speed) S.speed = BASE_NOTE / saved.tempo; // migrate old slow/medium/fast buttons
@@ -591,6 +593,11 @@ const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(Math.max(0, s) % 6
 /* ---------- audio ---------- */
 let ctx = null, wave = null, master = null, timer = null, t0 = 0, nextIdx = 0;
 let P = buildPlan(), state = 'idle', pos = 0;
+/* iPhone plays through its call sound path while the mic is on, at a different loudness: the piano gets its own level then */
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const micVol = () => S.micVol >= 0.1 && S.micVol <= 1 ? +S.micVol : (IOS ? 0.5 : 1);
+const level = () => 0.22 * (mic ? micVol() : 1);
+function applyLevel(){ if (master) master.gain.setTargetAtTime(level(), ctx.currentTime, 0.05); }
 let stale = false; // the phone slept or we left the app: iPhone can leave the old sound engine frozen for good, so start a new one on the next tap
 function ensureAudio(){
   if (ctx && (stale || ctx.state === 'interrupted' || ctx.state === 'closed')) {
@@ -643,7 +650,7 @@ function keyAt(p){ let k = 0; P.keys.forEach((kk, i) => { if (kk.t <= p + 0.01) 
 function begin(from){
   if (P.empty) return;
   silence(); ensureAudio(); ctx.resume();
-  master = ctx.createGain(); master.gain.value = 0.22; master.connect(ctx.destination);
+  master = ctx.createGain(); master.gain.value = level(); master.connect(ctx.destination);
   t0 = ctx.currentTime + 0.08 - from;
   nextIdx = P.ev.findIndex(e => e.t >= from - 0.001); if (nextIdx < 0) nextIdx = P.ev.length;
   timer = setInterval(schedule, 40); schedule();
@@ -832,19 +839,20 @@ async function micOn(){
     micMessage(blocked || e.name !== 'NotAllowedError' ? 'micBlocked' : 'micDenied', true); mic = null; return;
   }
   ensureAudio(); ctx.resume(); // the permission prompt may have interrupted the sound
-  listenTo(mic);
+  listenTo(mic); applyLevel();
   micTimer = setInterval(micTick, 50);
   $('meter').hidden = false; micMessage('micListening'); renderMic();
 }
 function micOff(){
   clearInterval(micTimer); micTimer = null;
   if (mic) mic.getTracks().forEach(tr => tr.stop());
-  mic = null; $('meter').hidden = true; micMessage('micHint'); renderMic();
+  mic = null; applyLevel(); $('meter').hidden = true; micMessage('micHint'); renderMic();
 }
 function renderMic(){
   $('micBtn').textContent = mic ? t().micOff : t().micOn;
   $('micBtn').setAttribute('aria-pressed', !!mic);
   $('noMelody').checked = !!S.noMelody;
+  $('micVolBox').hidden = !mic; $('micVol').value = micVol(); $('micVolVal').textContent = Math.round(micVol() * 100) + '%';
   const el = $('micMsg'); el.textContent = t()[el.dataset.key || 'micHint'];
 }
 function pause(){ if (state !== 'playing') return; pos = Math.max(0, ctx.currentTime - t0); silence(); state = 'paused'; paint(); }
@@ -1048,6 +1056,7 @@ $('resetBtn').onclick = () => toIdle();
 ['voicesM','voicesF'].forEach(id => $(id).onclick = e => { const b = e.target.closest('.chip'); if (!b) return;
   change(() => { const v = VOICES.find(x => x.id === b.dataset.id); S.voice = v.id; S.low = v.low; S.top = v.top; }); });
 $('micBtn').onclick = () => mic ? micOff() : micOn();
+$('micVol').oninput = e => { S.micVol = +e.target.value; persist(); applyLevel(); $('micVolVal').textContent = Math.round(S.micVol * 100) + '%'; };
 $('noMelody').onchange = e => { S.noMelody = e.target.checked; persist(); };
 $('modeTabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.v; renderControls(); };
 function pick(e){
